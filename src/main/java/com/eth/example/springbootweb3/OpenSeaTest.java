@@ -1,4 +1,4 @@
-package com.example.springbootweb3;
+package com.eth.example.springbootweb3;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

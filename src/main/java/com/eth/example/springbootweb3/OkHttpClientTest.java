@@ -1,4 +1,4 @@
-package com.example.springbootweb3;
+package com.eth.example.springbootweb3;
 
 import okhttp3.*;
 
@@ -36,7 +36,7 @@ public class OkHttpClientTest {
 //                    .addHeader("X-API-KEY", "null")
                     .build();
             Response response = client.newCall(request).execute();
-            System.out.println(response.body().string());
+            System.out.println(response.body());
         }
     }
     /**

@@ -1,4 +1,4 @@
-package com.example.springbootweb3;
+package com.eth.example.springbootweb3;
 
 import cn.hutool.json.JSONUtil;
 import java.io.IOException;

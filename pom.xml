@@ -9,10 +9,10 @@
     <version>2.6.3</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
-  <groupId>com.example</groupId>
-  <artifactId>springboot-web3</artifactId>
+  <groupId>com.eth</groupId>
+  <artifactId>eth-block-data-collection</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>springboot-web3</name>
+  <name>eth-block-data-collection</name>
   <description>Demo project for Spring Boot</description>
   <properties>
     <java.version>11</java.version>
@@ -44,6 +44,12 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.junit.vintage</groupId>
+          <artifactId>junit-vintage-engine</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.web3j</groupId>
@@ -67,6 +73,11 @@
       <groupId>cn.hutool</groupId>
       <artifactId>hutool-json</artifactId>
       <version>5.7.20</version>
+    </dependency>
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>fastjson</artifactId>
+      <version>1.2.37</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
     <dependency>

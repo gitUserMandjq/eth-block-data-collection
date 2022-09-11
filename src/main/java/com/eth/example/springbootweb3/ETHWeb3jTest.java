@@ -1,4 +1,4 @@
-package com.example.springbootweb3;
+package com.eth.example.springbootweb3;
 
 
 import cn.hutool.json.JSON;
@@ -59,7 +59,7 @@ public class ETHWeb3jTest {
             Optional<Transaction> transactions = web3j.ethGetTransactionByHash("0x32f0830fe141ffbf6642301aabc07ec1465772c1cbc1ab0a0c2713bec7438dfa").send().getTransaction();
             log.info("交易："+JSONUtil.toJsonStr(transactions.get()));
             EthBlock.TransactionObject transactionObject = (EthBlock.TransactionObject) ethGetBlance.get(0);
-            Optional<TransactionReceipt> transactionReceipt = web3j.ethGetTransactionReceipt(transactionObject.getHash()).send().getTransactionReceipt();
+            Optional<TransactionReceipt> transactionReceipt = web3j.ethGetTransactionReceipt("0x10dd605a4a917eff0e60492dfbeed7ba47320007c77a8b1a90f899f603a1ed89").send().getTransactionReceipt();
             log.info("交易回执："+JSONUtil.toJsonStr(transactionReceipt.get()));
         } catch (IOException e) {
             e.printStackTrace();
