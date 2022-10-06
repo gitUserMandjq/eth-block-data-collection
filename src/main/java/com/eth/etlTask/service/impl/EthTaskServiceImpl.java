@@ -1,8 +1,9 @@
 package com.eth.etlTask.service.impl;
 
-import cn.hutool.json.JSON;
 import com.eth.block.model.EthBlockModel;
 import com.eth.block.service.IEthBlockService;
+import com.eth.ens.model.EthEnsDTO;
+import com.eth.ens.service.IEthEnsInfoService;
 import com.eth.etlTask.service.IEtlTaskService;
 import com.eth.framework.base.utils.AlchemyUtils;
 import com.eth.framework.base.utils.JsonUtil;
@@ -11,23 +12,26 @@ import com.eth.transaction.consts.EthEventTopicConst;
 import com.eth.transaction.model.EthTxnModel;
 import com.eth.transaction.model.EthTxnReceiptDTO;
 import com.eth.transaction.service.IEthTxnService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.utils.Numeric;
 
 import javax.annotation.Resource;
-import java.math.BigInteger;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class EthTaskServiceImpl implements IEtlTaskService {
     @Resource
     IEthBlockService ethBlockService;
     @Resource
     IEthTxnService ethTxnService;
+    @Resource
+    IEthEnsInfoService ethEnsInfoService;
     /**
      * 解析某一高度的区块链数据
      * @param blockNumber
@@ -49,6 +53,7 @@ public class EthTaskServiceImpl implements IEtlTaskService {
             //初步处理交易信息
             HashMap<String, EthTxnModel> transactionMap = dealTransactionMap(block, blockModel);
             HashMap<String, EthTxnModel> transactionEnsMap = new HashMap<>();
+            HashMap<String, EthEnsDTO> ensMap = new HashMap<>();
             //获取交易回执，交易回执返回的顺序其实和交易的顺序一致
             String body = AlchemyUtils.alchemygetTransactionReceipts(blockNumber);
             Map<String, Object> resultMap = JsonUtil.string2Obj(body);
@@ -72,15 +77,30 @@ public class EthTaskServiceImpl implements IEtlTaskService {
                     List<Map> logs = (List<Map>) m.get("logs");
                     txn.setLogsNum(logs.size());
                     String contractAddress = receipt.getContractAddress();
-                    for(Map log:logs){
-                        String address = (String) log.get("address");//有关ENS的合约要靠事件调用来找到
+                    for(Map l:logs){
+                        String address = (String) l.get("address");//有关ENS的合约要靠事件调用来找到
                         if(AlchemyUtils.ENSCONSTRACTADDRESS.equalsIgnoreCase(address)){//如果是ENS合约
-                            List<String> topics = (List<String>) log.get("topics");
+                            List<String> topics = (List<String>) l.get("topics");
                             String topic0 = topics.get(0);//topic0就是函数名
                             if(EthEventTopicConst.TRANSFER_EVENT_TOPIC.equals(topic0)){//tokenId在topic[3]
+                                String from = topics.get(1);
+                                String to =  topics.get(2);
                                 String tokenId = topics.get(3);
+                                log.info("TransactionHash:"+txn.getTxnHash());
                                 String nftMetadata = AlchemyUtils.getNFTMetadata(address, tokenId);
                                 transactionEnsMap.put(txn.getTxnHash(), txn);
+                                EthEnsDTO ethEnsDTO;
+                                if(ensMap.containsKey(tokenId)){
+                                    ethEnsDTO = ensMap.get(tokenId);
+                                }else{
+                                    ethEnsDTO = new EthEnsDTO();
+                                    ethEnsDTO.setMeta(nftMetadata);
+                                    ethEnsDTO.setTokenId(tokenId);
+                                    ensMap.put(tokenId, ethEnsDTO);
+                                }
+                                ethEnsDTO.setFrom(from);
+                                ethEnsDTO.setTo(to);
+                                ethEnsDTO.setTxn(txn);
                             }
                         }
                     }
@@ -89,6 +109,12 @@ public class EthTaskServiceImpl implements IEtlTaskService {
             //批量新增交易信息
 //            ethTxnService.batchInsertTransaction(transactionMap);
             ethTxnService.batchInsertTransactionEns(transactionEnsMap);//交易数量有点多，先只保存ENS的数据
+            Iterator<Map.Entry<String, EthEnsDTO>> iterator = ensMap.entrySet().iterator();
+            while(iterator.hasNext()){
+                Map.Entry<String, EthEnsDTO> next = iterator.next();
+                EthEnsDTO value = next.getValue();
+                ethEnsInfoService.insertOrUpdateEns(value);
+            }
         }
     }
 

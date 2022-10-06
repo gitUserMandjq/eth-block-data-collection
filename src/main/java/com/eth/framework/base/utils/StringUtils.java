@@ -1,11 +1,10 @@
 package com.eth.framework.base.utils;
 
+import cn.hutool.core.util.CharUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 
-import javax.persistence.Query;
-import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -1102,11 +1101,6 @@ public class StringUtils {
         return inStr;
     }
 
-    public static void main(String[] args) {
-        StringBuilder sb = new StringBuilder("123456789");
-        sb.setLength(5);
-        System.out.println(sb);
-    }
 
     public static boolean isInteger(String companyId) {
         // TODO Auto-generated method stub
@@ -1176,8 +1170,105 @@ public class StringUtils {
         sb.append(")");
         return sb.toString();
     }
+    /**
+     * 判断字符串是否包含 emoji 或者 其他非文字类型的字符
+     * @param source
+     * @return
+     */
+    public static boolean containsEmoji(String source) {
+        int len = source.length();
+        boolean isEmoji = false;
+        for (int i = 0; i < len; i++) {
+            char hs = source.charAt(i);
+            if (0xd800 <= hs && hs <= 0xdbff) {
+                if (source.length() > 1) {
+                    char ls = source.charAt(i + 1);
+                    int uc = ((hs - 0xd800) * 0x400) + (ls - 0xdc00) + 0x10000;
+                    if (0x1d000 <= uc && uc <= 0x1f77f) {
+                        return true;
+                    }
+                }
+            } else {
+                // non surrogate
+                if (0x2100 <= hs && hs <= 0x27ff && hs != 0x263b) {
+                    return true;
+                } else if (0x2B05 <= hs && hs <= 0x2b07) {
+                    return true;
+                } else if (0x2934 <= hs && hs <= 0x2935) {
+                    return true;
+                } else if (0x3297 <= hs && hs <= 0x3299) {
+                    return true;
+                } else if (hs == 0xa9 || hs == 0xae || hs == 0x303d || hs == 0x3030 || hs == 0x2b55 || hs == 0x2b1c
+                        || hs == 0x2b1b || hs == 0x2b50 || hs == 0x231a) {
+                    return true;
+                }
+                if (!isEmoji && source.length() > 1 && i < source.length() - 1) {
+                    char ls = source.charAt(i + 1);
+                    if (ls == 0x20e3) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return isEmoji;
+    }
+    public static boolean isASCII(String s){
+        boolean ret = true;
+        for(int i = 0; i < s.length() ; i++) {
+            if(s.charAt(i)>=128){
+                ret = false;
+                break;
+            }
+        }
+        return ret;
+    }
+    private static boolean isEmojiCharacter(char codePoint) {
+        return (codePoint == 0x0) || (codePoint == 0x9) || (codePoint == 0xA) || (codePoint == 0xD)
+                || ((codePoint >= 0x20) && (codePoint <= 0xD7FF)) || ((codePoint >= 0xE000) && (codePoint <= 0xFFFD))
+                || ((codePoint >= 0x10000) && (codePoint <= 0x10FFFF));
+    }
+    // 纯数字
+    private static String DIGIT_REGEX = "[0-9]+";
+    // 含有数字
+    private static String CONTAIN_DIGIT_REGEX = ".*[0-9].*";
+    // 纯字母
+    private static String LETTER_REGEX = "[a-zA-Z]+";
+    // 包含字母
+    private static String CONTAIN_LETTER_REGEX = ".*[a-zA-z].*";
+    // 纯中文
+    private static String CHINESE_REGEX = "[\u4e00-\u9fa5]";
+    // 仅仅包含字母和数字
+    private static String LETTER_DIGIT_REGEX = "^[a-z0-9A-Z]+$";
+    public static boolean onlyLetter(String cardNum) {
+        Matcher m=Pattern.compile(LETTER_REGEX).matcher(cardNum);
+        return m.matches();
+    }
+    public static boolean containsLetter(String cardNum) {
+        Matcher m=Pattern.compile(CONTAIN_LETTER_REGEX).matcher(cardNum);
+        return m.matches();
+    }
+    public static boolean containsNumber(String cardNum) {
+        Matcher m=Pattern.compile(CONTAIN_DIGIT_REGEX).matcher(cardNum);
+        return m.matches();
+    }
+    /**
+     * 字符串是否包含不可见字符
+     * ""
+     * @param str 被检测的字符串
+     * @return 是否为空
+     */
+    public static boolean containInvisibles(String str) {
+        int length = str.length();
+        for (int i = 0; i < length; i++) {
+            if (CharUtil.isBlankChar(str.charAt(i))) {
+                return true;
+            }
+        }
+        return true;
+    }
 
-
-
-
+    public static void main(String[] args) {
+        String str = "\uD83D\uDD74\u200D♂.eth";
+        System.out.println(containInvisibles(str));
+    }
 }

@@ -1,14 +1,9 @@
 package com.eth.framework.base.utils;
 
-import cn.hutool.json.JSON;
-import cn.hutool.json.JSONUtil;
-import com.eth.transaction.model.EthTxnReceiptDTO;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 import java.util.Random;
 @Slf4j
 public class AlchemyUtils {
@@ -198,26 +193,26 @@ public class AlchemyUtils {
 //        }
 //        //一个ens交易
 //        //https://cn.etherscan.com/tx/0x10dd605a4a917eff0e60492dfbeed7ba47320007c77a8b1a90f899f603a1ed89
-//        String tokenId = "102858502995565732640093888466685851349467133070378883292988898339044383603257";
-//        try {
-//            getNFTMetadata(ENSCONSTRACTADDRESS, tokenId);
-//        } catch (IOException e) {
-//            log.info(e.getMessage(), e);
-//        }
-        {
-            String body = alchemygetTransactionReceipts(14919291L);
-            Map result = JsonUtil.string2Obj(body);
-            System.out.println(result.get("jsonrpc"));
-            System.out.println(result.get("id"));
-            Map result1 = (Map) result.get("result");
-            List<Map> receipts = (List<Map>) result1.get("receipts");
-            for(Map m:receipts){
-                EthTxnReceiptDTO receipt = JsonUtil.mapToBean(m, new EthTxnReceiptDTO());
-                if("0x10dd605a4a917eff0e60492dfbeed7ba47320007c77a8b1a90f899f603a1ed89".equals(receipt.getTransactionHash())){
-                    System.out.println(JsonUtil.object2String(m));
-                }
-            }
+        String tokenId = "55410952201049487871791681327342603684221801302599016058612157535488542032089";
+        try {
+            getNFTMetadata(ENSCONSTRACTADDRESS, tokenId);
+        } catch (IOException e) {
+            log.info(e.getMessage(), e);
         }
+//        {
+//            String body = alchemygetTransactionReceipts(14919291L);
+//            Map result = JsonUtil.string2Obj(body);
+//            System.out.println(result.get("jsonrpc"));
+//            System.out.println(result.get("id"));
+//            Map result1 = (Map) result.get("result");
+//            List<Map> receipts = (List<Map>) result1.get("receipts");
+//            for(Map m:receipts){
+//                EthTxnReceiptDTO receipt = JsonUtil.mapToBean(m, new EthTxnReceiptDTO());
+//                if("0x10dd605a4a917eff0e60492dfbeed7ba47320007c77a8b1a90f899f603a1ed89".equals(receipt.getTransactionHash())){
+//                    System.out.println(JsonUtil.object2String(m));
+//                }
+//            }
+//        }
         {
 //            String body = getBlockByNumber(14919289L, true);
         }

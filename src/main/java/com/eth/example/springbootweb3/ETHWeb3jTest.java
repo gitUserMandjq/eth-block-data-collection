@@ -1,28 +1,19 @@
 package com.eth.example.springbootweb3;
 
 
-import cn.hutool.json.JSON;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.stereotype.Component;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
-import org.web3j.protocol.core.Request;
-import org.web3j.protocol.core.methods.request.EthFilter;
-import org.web3j.protocol.core.methods.response.*;
-import org.web3j.protocol.core.methods.response.Transaction;
+import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
-import org.web3j.utils.Convert;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 @Component
 @Slf4j
@@ -41,25 +32,33 @@ public class ETHWeb3jTest {
     public static String EVENT_NAME_REGISTERED = "0xb3d987963d01b2f68493b4bdb130988f157ea43070d4ad840fee0466ed9370d9";
     public static String ENS_ADDRESS = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85";
     public static Web3j web3j = Web3j.build(new HttpService(HOST+"/v2/J4ipt__b_exS1cez4CO9KhRkXEYWxUcJ"));
+//    public static Web3j web3j = Web3j.build(new HttpService("https://mainnet.infura.io/v3/"));
+//    static {
+//        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+//        // 设置代理地址
+//        SocketAddress sa = new InetSocketAddress("127.0.0.1", 7890);
+//        builder.proxy(new Proxy(Proxy.Type.HTTP, sa));
+//        web3j = Web3j.build(new HttpService("https://mainnet.infura.io/v3/8D57dAc649760e11660B38f201292095f0000eA8", builder.build()));
+//    }
     public static void main(String[] args) {
         BigInteger latestBlock;
         try {
-            //获取ETH的最新区块号
-            latestBlock = web3j.ethBlockNumber().send().getBlockNumber();
-            log.info("最新区块数："+latestBlock);
-            //通过区块号获取交易
+//            //获取ETH的最新区块号
+//            latestBlock = web3j.ethBlockNumber().send().getBlockNumber();
+//            log.info("最新区块数："+latestBlock);
+//            //通过区块号获取交易
+////            EthBlock.Block block = web3j.ethGetBlockByNumber(DefaultBlockParameter.valueOf(
+////                    latestBlock.subtract(new BigInteger("3"))), true).send().getBlock();
 //            EthBlock.Block block = web3j.ethGetBlockByNumber(DefaultBlockParameter.valueOf(
-//                    latestBlock.subtract(new BigInteger("3"))), true).send().getBlock();
-            EthBlock.Block block = web3j.ethGetBlockByNumber(DefaultBlockParameter.valueOf(
-                    BigInteger.valueOf(14924138L)), true).send().getBlock();
-            log.info("最新区块-3："+ JSONUtil.toJsonStr(block));
-            List<EthBlock.TransactionResult> ethGetBlance = block.getTransactions();
-            log.info("交易："+JSONUtil.toJsonStr(ethGetBlance.get(0)));
-            //通过hash获取交易
-            Optional<Transaction> transactions = web3j.ethGetTransactionByHash("0x32f0830fe141ffbf6642301aabc07ec1465772c1cbc1ab0a0c2713bec7438dfa").send().getTransaction();
-            log.info("交易："+JSONUtil.toJsonStr(transactions.get()));
-            EthBlock.TransactionObject transactionObject = (EthBlock.TransactionObject) ethGetBlance.get(0);
-            Optional<TransactionReceipt> transactionReceipt = web3j.ethGetTransactionReceipt("0x10dd605a4a917eff0e60492dfbeed7ba47320007c77a8b1a90f899f603a1ed89").send().getTransactionReceipt();
+//                    BigInteger.valueOf(14924138L)), true).send().getBlock();
+//            log.info("最新区块-3："+ JSONUtil.toJsonStr(block));
+//            List<EthBlock.TransactionResult> ethGetBlance = block.getTransactions();
+//            log.info("交易："+JSONUtil.toJsonStr(ethGetBlance.get(0)));
+//            //通过hash获取交易
+//            Optional<Transaction> transactions = web3j.ethGetTransactionByHash("0x32f0830fe141ffbf6642301aabc07ec1465772c1cbc1ab0a0c2713bec7438dfa").send().getTransaction();
+//            log.info("交易："+JSONUtil.toJsonStr(transactions.get()));
+//            EthBlock.TransactionObject transactionObject = (EthBlock.TransactionObject) ethGetBlance.get(0);
+            Optional<TransactionReceipt> transactionReceipt = web3j.ethGetTransactionReceipt("0x50f87895cf8a385a492545b17e23a21046df2525159942b2fdfdfbea49d2a981").send().getTransactionReceipt();
             log.info("交易回执："+JSONUtil.toJsonStr(transactionReceipt.get()));
         } catch (IOException e) {
             e.printStackTrace();
