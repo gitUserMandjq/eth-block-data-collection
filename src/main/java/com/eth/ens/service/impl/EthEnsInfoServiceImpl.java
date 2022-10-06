@@ -38,7 +38,7 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
         }
         dealEnsMeta(ethEnsInfoModel, meta);
         EthTxnModel txn = ensDTO.getTxn();
-        Long timestamp = txn.getTimestamp();
+        Long timestamp = txn.getTimestamp() * 1000L;
         if(ethEnsInfoModel.getLastTxnTime() == null || ethEnsInfoModel.getLastTxnTime().getTime() <= timestamp){
             ethEnsInfoModel.setLastTxnTime(new Date(timestamp));
             ethEnsInfoModel.setLastTxnHash(txn.getTxnHash());
