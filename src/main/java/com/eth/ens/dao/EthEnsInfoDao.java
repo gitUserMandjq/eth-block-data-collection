@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 
 
 @Repository
-public interface EthEnsInfoDao extends JpaRepository<EthEnsInfoModel,String> {
+public interface EthEnsInfoDao extends JpaRepository<EthEnsInfoModel,String> ,EthEnsInfoDao2{
 
 }
