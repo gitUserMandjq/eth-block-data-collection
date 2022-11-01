@@ -1,10 +1,15 @@
 package com.eth.ens.service.impl;
 
 import com.eth.ens.dao.EthEnsInfoDao;
+import com.eth.ens.model.EnsDomainsDTO;
+import com.eth.ens.model.EnsDomainsQO;
 import com.eth.ens.model.EthEnsDTO;
 import com.eth.ens.model.EthEnsInfoModel;
 import com.eth.ens.service.IEthEnsInfoService;
+import com.eth.framework.base.model.PageData;
+import com.eth.framework.base.model.PageParam;
 import com.eth.framework.base.utils.JsonUtil;
+import com.eth.framework.base.utils.PageUtils;
 import com.eth.framework.base.utils.StringUtils;
 import com.eth.transaction.model.EthTxnModel;
 import org.springframework.stereotype.Service;
@@ -46,6 +51,19 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
             ethEnsInfoModel.setOwner(ensDTO.getTo());
         }
         ethEnsInfoDao.save(ethEnsInfoModel);
+    }
+    /**
+     * 查询ens列表
+     * @param qo
+     * @param pageParam
+     * @return
+     */
+    @Override
+    public PageData<EnsDomainsDTO> listEnsDomain(EnsDomainsQO qo, PageParam pageParam) {
+        List<EnsDomainsDTO> list = ethEnsInfoDao.listEnsDomain(qo, pageParam);
+        Integer count = ethEnsInfoDao.countEnsDomain(qo);
+        PageData<EnsDomainsDTO> pageData = PageUtils.convertPageData(list, count, pageParam);
+        return pageData;
     }
 
     private static void dealEnsMeta(EthEnsInfoModel ethEnsInfoModel, String meta) throws IOException {

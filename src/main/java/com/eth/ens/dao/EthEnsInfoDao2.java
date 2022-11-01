@@ -18,8 +18,7 @@ public interface EthEnsInfoDao2 {
     /**
      * 查询ens列表总数
      * @param qo
-     * @param pageParam
      * @return
      */
-    Integer countEnsDomain(EnsDomainsQO qo, PageParam pageParam);
+    Integer countEnsDomain(EnsDomainsQO qo);
 }
