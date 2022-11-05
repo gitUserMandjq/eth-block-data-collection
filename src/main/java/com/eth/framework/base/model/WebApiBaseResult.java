@@ -35,8 +35,24 @@ public class WebApiBaseResult {
     public final static String FAIL = "fail";
     public static final String COMMONERROR = "300";
     private String traceId;
-    
-    
+    private String errorMessage;
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public static WebApiBaseResult fail(String errorMessage) {
+        WebApiBaseResult result = new WebApiBaseResult();
+        result.setErrorMessage(errorMessage);
+        result.setStatusCode(COMMONERROR);
+        return result;
+    }
+
+
     //新加总线的id
     public String getTraceId() {
 		return traceId;
