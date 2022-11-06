@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -44,6 +45,8 @@ public class AlchemyUtils {
     public static String getContractMetadata(String contractAddress) throws IOException {
         OkHttpClient client = okHttpBuilder.build();
         {
+            String body = null;
+            Date beginTime = new Date();
             String url = getAlchemyPath() + "/getContractMetadata?" +
                     "contractAddress=" + contractAddress;
             log.info("url:" + url);
@@ -53,9 +56,28 @@ public class AlchemyUtils {
                     .get()
                     .addHeader("Accept", "application/json")
                     .build();
-            Response response = client.newCall(request).execute();
-            String body = response.body().string();
-            log.info("body:" + body);
+            try {
+                int count = 0;
+                int max = 3;
+                while(count < max){
+                    Response response = null;
+                    try {
+                        response = client.newCall(request).execute();
+                        body = response.body().string();
+                        log.info("body:" + body);
+                        //如果成功了跳出循环
+                        break;
+                    } catch (Exception e) {
+                        count++;
+                    }
+                }
+            } catch (Exception e) {
+                log.info("error:"+url);
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
+            } finally {
+                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+            }
             return body;
         }
     }
@@ -70,11 +92,16 @@ public class AlchemyUtils {
      */
     public static String getNFTMetadata(String contractAddress, String tokenId) throws IOException{
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        builder.connectTimeout(2, TimeUnit.MINUTES)
+                .writeTimeout(2, TimeUnit.MINUTES)
+                .readTimeout(2, TimeUnit.MINUTES);
         // 设置代理地址
 //        SocketAddress sa = new InetSocketAddress("127.0.0.1", 60959);
 //        builder.proxy(new Proxy(Proxy.Type.HTTP, sa));
         OkHttpClient client = builder.build();
         {
+            String body = null;
+            Date beginTime = new Date();
             String url = getAlchemyPath() + "/getNFTMetadata?" +
                     "contractAddress=" + contractAddress + "&tokenId=" + tokenId + "&refreshCache=false";
             log.info("url:" + url);
@@ -82,14 +109,42 @@ public class AlchemyUtils {
                     .url(url)
                     .get()
                     .addHeader("Accept", "application/json")
-//                    .addHeader("X-API-KEY", "null")
+                    //                    .addHeader("X-API-KEY", "null")
                     .build();
-            Response response = client.newCall(request).execute();
-            String body = response.body().string();
-            log.info("body:" + body);
+            try {
+                body = callResponse(client, request);
+                log.info("body:" + body);
+            } catch (Exception e) {
+                log.info("error:"+url);
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
+            } finally {
+                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+            }
             return body;
 
         }
+    }
+    private static String callResponse(OkHttpClient client, Request request) throws Exception{
+
+        int count = 0;
+        int max = 3;
+        String body = null;
+        while(true){
+            try {
+                Response response = client.newCall(request).execute();
+                body = response.body().string();
+                //如果成功了跳出循环
+                break;
+            } catch (Exception e) {
+                count++;
+                log.info("retry:"+count);
+                if(count >= max){
+                    throw e;
+                }
+            }
+        }
+        return body;
     }
     /**
      * 通过区块高度查询交易回执列表
@@ -121,6 +176,8 @@ public class AlchemyUtils {
 //        builder.proxy(new Proxy(Proxy.Type.HTTP, sa));
         OkHttpClient client = builder.build();
         {
+            String body = null;
+            Date beginTime = new Date();
             String data = "{" +
                     "\"id\": "+blockNumber+"," +
                     "\"jsonrpc\": \"2.0\"," +
@@ -140,10 +197,17 @@ public class AlchemyUtils {
                     .url(url)
                     .post(requestBody)
                     .addHeader("Accept", "application/json")
-//                    .addHeader("X-API-KEY", "null")
+                    //                    .addHeader("X-API-KEY", "null")
                     .build();
-            Response response = client.newCall(request).execute();
-            String body = response.body().string();
+            try {
+                body = callResponse(client, request);
+            } catch (Exception e) {
+                log.info("error:"+url);
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
+            } finally {
+                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+            }
 //            log.info("body:" + body);
             return body;
         }
@@ -163,6 +227,8 @@ public class AlchemyUtils {
 //        builder.proxy(new Proxy(Proxy.Type.HTTP, sa));
         OkHttpClient client = builder.build();
         {
+            String body = null;
+            Date beginTime = new Date();
             String data = "{" +
                     "\"id\": "+blockNumber+"," +
                     "\"jsonrpc\": \"2.0\"," +
@@ -181,11 +247,18 @@ public class AlchemyUtils {
                     .url(url)
                     .post(requestBody)
                     .addHeader("Accept", "application/json")
-//                    .addHeader("X-API-KEY", "null")
+                    //                    .addHeader("X-API-KEY", "null")
                     .build();
-            Response response = client.newCall(request).execute();
-            String body = response.body().string();
-            log.info("body:" + body);
+            try {
+                body = callResponse(client, request);
+                log.info("body:" + body);
+            } catch (Exception e) {
+                log.info("error:"+url);
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
+            } finally {
+                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+            }
             return body;
         }
     }
