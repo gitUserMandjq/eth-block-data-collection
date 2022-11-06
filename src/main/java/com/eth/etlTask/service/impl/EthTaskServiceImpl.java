@@ -23,6 +23,11 @@ import org.web3j.utils.Numeric;
 
 import javax.annotation.Resource;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -37,13 +42,18 @@ public class EthTaskServiceImpl implements IEtlTaskService {
     ISysErrorMessageService sysErrorMessageService;
     @Resource
     ISysMessageService sysMessageService;
+
+    ExecutorService threadPool= Executors.newFixedThreadPool(20);
+
+
+
     /**
      * 解析某一高度的区块链数据
      * @param blockNumber
      * @throws Exception
      */
     @Override
-    public void etlEthBlock(Long blockNumber) throws Exception {
+    public void etlEthBlock(Long blockNumber, Integer retry) {
         Date beginTime = new Date();
         try {
             //通过web3.eth方法获取区块链和交易数据
@@ -128,11 +138,73 @@ public class EthTaskServiceImpl implements IEtlTaskService {
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            sysErrorMessageService.addSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK, e.getMessage(), blockNumber);
+            if(retry < 3){//重试三次
+                retry ++;
+                etlEthBlock(blockNumber, retry);
+                return;
+            }else{
+                sysErrorMessageService.addSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK, e.getMessage(), blockNumber);
+            }
         } finally {
             String message = "etlEthBlock消耗时间:"+(new Date().getTime() - beginTime.getTime()+"ms");
             sysMessageService.addSysMessage(SysMessageModel.TYPE_ETHTASK, message, blockNumber);
         }
+    }
+
+    /**
+     * 解析某一高度的区块链数据
+     * @param blockNumber
+     * @throws Exception
+     */
+    @Override
+    public void etlEthBlock(Long blockNumber, Integer retry, CountDownLatch latch){
+        threadPool.submit(()->{
+            etlEthBlock(blockNumber, retry);
+            latch.countDown();
+        });
+    }
+    /**
+     * 解析某一高度的区块链数据
+     * @param blockNumber
+     * @throws Exception
+     */
+    @Override
+    public void etlEthBlock(Long blockNumber, Integer retry, CountDownLatch latch, Semaphore lock){
+        try {
+            lock.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        threadPool.submit(()->{
+            etlEthBlock(blockNumber, retry);
+            latch.countDown();
+            lock.release();
+        });
+    }
+    /**
+     * 解析某一高度的区块链数据
+     * @param startBlockNumber
+     * @param endBlockNumber
+     * @throws Exception
+     */
+    @Override
+    public void etlEthBlock(Long startBlockNumber, Long endBlockNumber) throws Exception {
+        for(long i = startBlockNumber;i<endBlockNumber;i++){
+            etlEthBlock(i, 0);
+        }
+    }
+    /**
+     * 处理异常区块链数据
+     * @throws Exception
+     */
+    @Override
+    public void dealErrorEth() throws Exception {
+        List<SysErrorMessageModel> errorList = sysErrorMessageService.listNotDealSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK);
+        for(SysErrorMessageModel error:errorList){
+            etlEthBlock(error.getBlockNumber(), 0);
+        }
+        List<Long> ids = errorList.stream().map(SysErrorMessageModel::getId).collect(Collectors.toList());
+        sysErrorMessageService.dealSysErrorMessage(ids);
     }
 
     private static HashMap<String, EthTxnModel> dealTransactionMap(EthBlock.Block block, EthBlockModel blockModel) {

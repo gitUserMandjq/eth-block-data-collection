@@ -10,6 +10,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
 import java.util.Date;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 
 //@RunWith(SpringRunner.class)
 @SpringBootTest(classes = SpringbootWeb3Application.class)
@@ -25,12 +27,18 @@ class SpringbootWeb3ApplicationTests {
   @Test
   void contextLoads() throws Exception {
 //    etlTaskService.etlEthBlock(14669839L);
-    Long high = 14669839L;
-    for(long i = 14660638L;i<high;i++){
-      Date beginTime = new Date();
-      etlTaskService.etlEthBlock(i);
-      System.out.println("costTime:"+(new Date().getTime() - beginTime.getTime()));
+    Long high = 10000000L;
+    Long start = 9380422L;
+    CountDownLatch latch = new CountDownLatch((int)(high - start + 1));
+    Semaphore lock = new Semaphore(20);
+    Date startTime = new Date();
+    for(long i = start; i<=high; i++){
+      etlTaskService.etlEthBlock(i, 0, latch, lock);
+      System.out.println("allTime"+i+":"+(new Date().getTime() - startTime.getTime()));
     }
+    System.out.println("allTime:"+(new Date().getTime() - startTime.getTime()));
+    latch.await();
+//    etlTaskService.dealErrorEth();
   }
 //  @Test
 //  void contextLoads2() throws Exception {

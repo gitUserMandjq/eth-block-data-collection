@@ -34,7 +34,6 @@ public class EthBlockModel {
     @Column(updatable = false)
     private Date createdAt;//系统时间
     private Date updatedAt;//系统时间
-    public static final Long createBlockHeight = 9380422L;//合约创建高度
     public EthBlockModel(EthBlock.Block block) {
         this.id = block.getNumber().longValue();
         this.blockNumber = block.getNumber().longValue();
