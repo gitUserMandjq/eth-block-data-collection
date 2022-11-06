@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
+import java.util.Date;
 
 //@RunWith(SpringRunner.class)
 @SpringBootTest(classes = SpringbootWeb3Application.class)
@@ -24,6 +25,12 @@ class SpringbootWeb3ApplicationTests {
   @Test
   void contextLoads() throws Exception {
 //    etlTaskService.etlEthBlock(14669839L);
+    Long high = 14669839L;
+    for(long i = 14660638L;i<high;i++){
+      Date beginTime = new Date();
+      etlTaskService.etlEthBlock(i);
+      System.out.println("costTime:"+(new Date().getTime() - beginTime.getTime()));
+    }
   }
 //  @Test
 //  void contextLoads2() throws Exception {

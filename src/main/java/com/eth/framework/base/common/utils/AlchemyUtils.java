@@ -1,4 +1,4 @@
-package com.eth.framework.base.utils;
+package com.eth.framework.base.common.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;

@@ -10,8 +10,8 @@ import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.eth.framework.base.utils.StringUtils.montageInsertSql;
-import static com.eth.framework.base.utils.StringUtils.transSqlValue;
+import static com.eth.framework.base.common.utils.StringUtils.montageInsertSql;
+import static com.eth.framework.base.common.utils.StringUtils.transSqlValue;
 
 
 public class EthTxnDaoImpl implements EthTxnDao2 {

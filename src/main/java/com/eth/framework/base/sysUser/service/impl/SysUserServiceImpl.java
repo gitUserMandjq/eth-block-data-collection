@@ -3,7 +3,7 @@ package com.eth.framework.base.sysUser.service.impl;
 import com.eth.framework.base.sysUser.dao.SysUserDao;
 import com.eth.framework.base.sysUser.model.SysUserModel;
 import com.eth.framework.base.sysUser.service.ISysUserService;
-import com.eth.framework.base.utils.SnowflakeIdUtils;
+import com.eth.framework.base.common.utils.SnowflakeIdUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;

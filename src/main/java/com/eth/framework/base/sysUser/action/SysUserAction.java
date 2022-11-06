@@ -1,6 +1,6 @@
 package com.eth.framework.base.sysUser.action;
 
-import com.eth.framework.base.model.WebApiBaseResult;
+import com.eth.framework.base.common.model.WebApiBaseResult;
 import com.eth.framework.base.sysUser.model.SysUserDTO;
 import com.eth.framework.base.sysUser.model.SysUserModel;
 import com.eth.framework.base.sysUser.service.ISysUserService;

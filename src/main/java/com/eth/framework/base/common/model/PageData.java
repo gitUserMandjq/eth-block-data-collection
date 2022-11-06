@@ -1,4 +1,4 @@
-package com.eth.framework.base.model;
+package com.eth.framework.base.common.model;
 
 import java.io.Serializable;
 import java.util.List;

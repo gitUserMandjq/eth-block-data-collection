@@ -1,6 +1,6 @@
 package com.eth.transaction.model;
 
-import com.eth.framework.base.utils.StringUtils;
+import com.eth.framework.base.common.utils.StringUtils;
 import lombok.Data;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.utils.Numeric;

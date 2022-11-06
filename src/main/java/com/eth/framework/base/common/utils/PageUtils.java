@@ -1,7 +1,7 @@
-package com.eth.framework.base.utils;
+package com.eth.framework.base.common.utils;
 
-import com.eth.framework.base.model.PageData;
-import com.eth.framework.base.model.PageParam;
+import com.eth.framework.base.common.model.PageData;
+import com.eth.framework.base.common.model.PageParam;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;

@@ -1,4 +1,4 @@
-package com.eth.framework.base.utils;
+package com.eth.framework.base.common.utils;
 
 import cn.hutool.core.util.CharUtil;
 import org.slf4j.Logger;

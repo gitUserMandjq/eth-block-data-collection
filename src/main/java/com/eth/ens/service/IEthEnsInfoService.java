@@ -3,8 +3,8 @@ package com.eth.ens.service;
 import com.eth.ens.model.EnsDomainsDTO;
 import com.eth.ens.model.EnsDomainsQO;
 import com.eth.ens.model.EthEnsDTO;
-import com.eth.framework.base.model.PageData;
-import com.eth.framework.base.model.PageParam;
+import com.eth.framework.base.common.model.PageData;
+import com.eth.framework.base.common.model.PageParam;
 
 import java.io.IOException;
 

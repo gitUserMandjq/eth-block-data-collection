@@ -1,4 +1,4 @@
-package com.eth.framework.base.model;
+package com.eth.framework.base.common.model;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

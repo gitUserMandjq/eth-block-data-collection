@@ -1,6 +1,6 @@
-package com.eth.framework.base.exception;
+package com.eth.framework.base.common.exception;
 
-import com.eth.framework.base.model.WebApiBaseResult;
+import com.eth.framework.base.common.model.WebApiBaseResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

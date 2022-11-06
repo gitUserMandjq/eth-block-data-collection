@@ -2,7 +2,7 @@ package com.eth.ens.dao;
 
 import com.eth.ens.model.EnsDomainsDTO;
 import com.eth.ens.model.EnsDomainsQO;
-import com.eth.framework.base.model.PageParam;
+import com.eth.framework.base.common.model.PageParam;
 
 import java.util.List;
 
