@@ -5,6 +5,8 @@ import okhttp3.*;
 
 import java.io.IOException;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
 @Slf4j
 public class AlchemyUtils {
     //复用builder，创建的client共享连接池、线程池和其他配置
@@ -110,6 +112,10 @@ public class AlchemyUtils {
      */
     public static String alchemygetTransactionReceipts(Long blockNumber) throws IOException {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        //内容较长
+        builder.connectTimeout(5, TimeUnit.MINUTES)
+                .writeTimeout(5, TimeUnit.MINUTES)
+                .readTimeout(5, TimeUnit.MINUTES);
         // 设置代理地址
 //        SocketAddress sa = new InetSocketAddress("127.0.0.1", 60959);
 //        builder.proxy(new Proxy(Proxy.Type.HTTP, sa));

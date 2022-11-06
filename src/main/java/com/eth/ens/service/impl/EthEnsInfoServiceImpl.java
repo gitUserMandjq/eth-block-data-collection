@@ -12,6 +12,7 @@ import com.eth.framework.base.utils.JsonUtil;
 import com.eth.framework.base.utils.PageUtils;
 import com.eth.framework.base.utils.StringUtils;
 import com.eth.transaction.model.EthTxnModel;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -22,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
     @Resource
     EthEnsInfoDao ethEnsInfoDao;
@@ -50,6 +52,7 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
             ethEnsInfoModel.setLastTxnFee(txn.getEthValue().longValue());
             ethEnsInfoModel.setOwner(ensDTO.getTo());
         }
+        log.info(JsonUtil.object2String(ethEnsInfoModel));
         ethEnsInfoDao.save(ethEnsInfoModel);
     }
     /**

@@ -1,6 +1,5 @@
 package com.eth.transaction.model;
 
-import com.eth.framework.base.utils.SnowflakeIdUtils;
 import com.eth.framework.base.utils.StringUtils;
 import lombok.Data;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -74,7 +73,11 @@ public class EthTxnModel {
         this.isError = 2;
         this.errMsg = "";
         if(!StringUtils.isEmpty(ta.getInput()) && !ta.getInput().equals("0x")){
-            this.methodId = ta.getInput().substring(0, 10);//数据前十位是方法名
+            if(ta.getInput().length() > 10){
+                this.methodId = ta.getInput().substring(0, 10);//数据前十位是方法名
+            }else{
+                this.methodId = ta.getInput();
+            }
         }
         if(ta.getType() != null){
             this.type = Numeric.decodeQuantity(ta.getType()).intValue();

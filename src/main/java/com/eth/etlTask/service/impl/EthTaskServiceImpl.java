@@ -83,9 +83,12 @@ public class EthTaskServiceImpl implements IEtlTaskService {
                             List<String> topics = (List<String>) l.get("topics");
                             String topic0 = topics.get(0);//topic0就是函数名
                             if(EthEventTopicConst.TRANSFER_EVENT_TOPIC.equals(topic0)){//tokenId在topic[3]
-                                String from = topics.get(1);
-                                String to =  topics.get(2);
+                                String from = topics.get(1).replace("0x000000000000000000000000","0x");
+                                String to =  topics.get(2).replace("0x000000000000000000000000","0x");
                                 String tokenId = topics.get(3);
+                                log.info("from:"+from);
+                                log.info("to:"+to);
+                                log.info("tokenId:"+tokenId);
                                 log.info("TransactionHash:"+txn.getTxnHash());
                                 String nftMetadata = AlchemyUtils.getNFTMetadata(address, tokenId);
                                 transactionEnsMap.put(txn.getTxnHash(), txn);
