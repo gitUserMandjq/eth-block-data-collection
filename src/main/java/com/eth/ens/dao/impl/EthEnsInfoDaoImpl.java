@@ -117,10 +117,10 @@ public class EthEnsInfoDaoImpl implements EthEnsInfoDao2 {
             strSql.append(" and en.domain like concat('%',:domain,'%')");
         }
         if(!StringUtils.isEmpty(qo.getExpiration_date_start())){
-            strSql.append(" and en.expirationDate >= :expirationStartTime");
+            strSql.append(" and en.expiration_date >= :expirationStartTime");
         }
         if(!StringUtils.isEmpty(qo.getExpiration_date_end())){
-            strSql.append(" and en.expirationDate <= :expirationEndTime");
+            strSql.append(" and en.expiration_date <= :expirationEndTime");
         }
         if(qo.getLength_min() != null){
             strSql.append(" and en.length >= :lengthMin");
@@ -135,19 +135,19 @@ public class EthEnsInfoDaoImpl implements EthEnsInfoDao2 {
             strSql.append(" and en.domain like concat('%',:endsWith)");
         }
         if(!StringUtils.isEmpty(qo.getLetters_only())){
-            strSql.append(" and en.lettersOnly = :lettersOnly");
+            strSql.append(" and en.letters_only = :lettersOnly");
         }
         if(!StringUtils.isEmpty(qo.getHas_numbers())){
-            strSql.append(" and en.hasNumbers = :hasNumbers");
+            strSql.append(" and en.has_numbers = :hasNumbers");
         }
         if(!StringUtils.isEmpty(qo.getHas_unicode())){
-            strSql.append(" and en.hasUnicode = :hasUnicode");
+            strSql.append(" and en.has_unicode = :hasUnicode");
         }
         if(!StringUtils.isEmpty(qo.getHas_emoji())){
-            strSql.append(" and en.hasEmoji = :hasEmoji");
+            strSql.append(" and en.has_emoji = :hasEmoji");
         }
         if(!StringUtils.isEmpty(qo.getHas_invisibles())){
-            strSql.append(" and en.hasInvisibles = :hasInvisibles");
+            strSql.append(" and en.has_invisibles = :hasInvisibles");
         }
     }
 }
