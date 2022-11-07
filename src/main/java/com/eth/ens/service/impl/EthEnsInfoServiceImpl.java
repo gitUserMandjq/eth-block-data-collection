@@ -71,35 +71,54 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
 
     private static void dealEnsMeta(EthEnsInfoModel ethEnsInfoModel, String meta) throws IOException {
         Map<String, Object> map = JsonUtil.string2Obj(meta);
-        Map contract = (Map) map.get("contract");
-        String address = (String) contract.get("address");
-        Map metadata = (Map) map.get("metadata");
-        String domain = (String) metadata.get("name");
-        String image = (String) metadata.get("image");
-        String backgroundImage = (String) metadata.get("background_image");
-        String url = (String) metadata.get("url");
-        Integer length = (Integer) metadata.get("segment_length");
-        List<Map> attributes = (List<Map>) metadata.get("attributes");
+        String title = (String) map.get("title");
+        String address = "";
+        String domain = "";
+        String image = "";
+        String backgroundImage = "";
+        String url = "";
+        Integer length = null;
         Date createDate = null;
         Date expirationDate = null;
         Date registrationDate = null;
         String characterSet = "";
-        for(Map m:attributes){
-            if("Created Date".equals(m.get("trait_type"))){
-                createDate = new Date((Long) m.get("value"));
-                continue;
-            }
-            if("Character Set".equals(m.get("trait_type"))){
-                characterSet = (String) m.get("value");
-                continue;
-            }
-            if("Registration Date".equals(m.get("trait_type"))){
-                registrationDate = new Date((Long) m.get("value"));
-                continue;
-            }
-            if("Expiration Date".equals(m.get("trait_type"))){
-                expirationDate = new Date((Long) m.get("value"));
-                continue;
+        if(StringUtils.isEmpty(title)){
+            //{"contract":{"address":"0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"},"id":{"tokenId":"0x4cbedf505977ad2333f03571681875b18ea2e1837c0791da20ee246e3ea7f34c","tokenMetadata":{"tokenType":"ERC721"}},"title":"","description":"","tokenUri":{"raw":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0x4cbedf505977ad2333f03571681875b18ea2e1837c0791da20ee246e3ea7f34c","gateway":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0x4cbedf505977ad2333f03571681875b18ea2e1837c0791da20ee246e3ea7f34c"},"media":[{"raw":"","gateway":""}],"metadata":{"message":{"name":"unknown.name","description":"Unknown ENS name","attributes":[{"display_type":"date","value":1580346653000000,"trait_type":"Created Date"},{"display_type":"number","value":7,"trait_type":"Length"},{"display_type":"string","value":"letter","trait_type":"Character Set"}],"name_length":7,"version":0,"is_normalized":true}},"timeLastUpdated":"2022-05-14T00:57:20.478Z","contractMetadata":{"tokenType":"ERC721","openSea":{"floorPrice":8.8E-4,"collectionName":"ENS: Ethereum Name Service","safelistRequestStatus":"verified","imageUrl":"https://i.seadn.io/gae/0cOqWoYA7xL9CkUjGlxsjreSYBdrUBE0c6EO1COG4XE8UeP-Z30ckqUNiL872zHQHQU5MUNMNhfDpyXIP17hRSC5HQ?w=500&auto=format","description":"Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.","externalUrl":"https://ens.domains","twitterUsername":"ensdomains","lastIngestedAt":"2022-11-01T15:30:04.000Z"}}}
+            //如果title为空，说明ens已经过期了，只能通过tokenUri.raw查询
+            //https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0x4cbedf505977ad2333f03571681875b18ea2e1837c0791da20ee246e3ea7f34c
+            //{"message":"'caizhuoyan.eth' is already been expired at Mon, 04 May 2020 00:00:00 GMT."}
+            Map tokenUri = (Map) map.get("tokenUri");
+            String raw = (String) tokenUri.get("raw");
+        }else{
+            //{"contract":{"address":"0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"},"id":{"tokenId":"0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c","tokenMetadata":{"tokenType":"ERC721"}},"title":"rehbein.eth","description":"rehbein.eth, an ENS name.","tokenUri":{"raw":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/105163109881267868532041562026418602960922071549544155763322457683184960142748","gateway":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/105163109881267868532041562026418602960922071549544155763322457683184960142748"},"media":[{"raw":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image","gateway":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image"}],"metadata":{"background_image":"https://metadata.ens.domains/mainnet/avatar/rehbein.eth","image":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image","is_normalized":true,"segment_length":7,"image_url":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image","name":"rehbein.eth","description":"rehbein.eth, an ENS name.","attributes":[{"display_type":"date","value":1500099683000,"trait_type":"Created Date"},{"display_type":"number","value":7,"trait_type":"Length"},{"display_type":"number","value":7,"trait_type":"Segment Length"},{"display_type":"string","value":"letter","trait_type":"Character Set"},{"display_type":"date","value":1661223139000,"trait_type":"Registration Date"},{"display_type":"date","value":1692780091000,"trait_type":"Expiration Date"}],"name_length":7,"version":0,"url":"https://app.ens.domains/name/rehbein.eth"},"timeLastUpdated":"2022-11-07T06:22:52.532Z","contractMetadata":{"tokenType":"ERC721","openSea":{"floorPrice":8.8E-4,"collectionName":"ENS: Ethereum Name Service","safelistRequestStatus":"verified","imageUrl":"https://i.seadn.io/gae/0cOqWoYA7xL9CkUjGlxsjreSYBdrUBE0c6EO1COG4XE8UeP-Z30ckqUNiL872zHQHQU5MUNMNhfDpyXIP17hRSC5HQ?w=500&auto=format","description":"Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.","externalUrl":"https://ens.domains","twitterUsername":"ensdomains","lastIngestedAt":"2022-11-01T15:30:04.000Z"}}}
+            //https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/105163109881267868532041562026418602960922071549544155763322457683184960142748
+            //{"is_normalized":true,"name":"rehbein.eth","description":"rehbein.eth, an ENS name.","attributes":[{"trait_type":"Created Date","display_type":"date","value":1500099683000},{"trait_type":"Length","display_type":"number","value":7},{"trait_type":"Segment Length","display_type":"number","value":7},{"trait_type":"Character Set","display_type":"string","value":"letter"},{"trait_type":"Registration Date","display_type":"date","value":1661223139000},{"trait_type":"Expiration Date","display_type":"date","value":1692780091000}],"name_length":7,"segment_length":7,"url":"https://app.ens.domains/name/rehbein.eth","version":0,"background_image":"https://metadata.ens.domains/mainnet/avatar/rehbein.eth","image":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image","image_url":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image"}
+            Map contract = (Map) map.get("contract");
+            address = (String) contract.get("address");
+            Map metadata = (Map) map.get("metadata");
+            domain = (String) metadata.get("name");
+            image = (String) metadata.get("image");
+            backgroundImage = (String) metadata.get("background_image");
+            url = (String) metadata.get("url");
+            length = (Integer) metadata.get("segment_length");
+            List<Map> attributes = (List<Map>) metadata.get("attributes");
+            for(Map m:attributes){
+                if("Created Date".equals(m.get("trait_type"))){
+                    createDate = new Date((Long) m.get("value"));
+                    continue;
+                }
+                if("Character Set".equals(m.get("trait_type"))){
+                    characterSet = (String) m.get("value");
+                    continue;
+                }
+                if("Registration Date".equals(m.get("trait_type"))){
+                    registrationDate = new Date((Long) m.get("value"));
+                    continue;
+                }
+                if("Expiration Date".equals(m.get("trait_type"))){
+                    expirationDate = new Date((Long) m.get("value"));
+                    continue;
+                }
             }
         }
         ethEnsInfoModel.setConstractAddress(address);

@@ -7,7 +7,6 @@ import com.eth.ens.service.IEthEnsInfoService;
 import com.eth.etlTask.service.IEtlTaskService;
 import com.eth.framework.base.common.utils.AlchemyUtils;
 import com.eth.framework.base.common.utils.JsonUtil;
-import com.eth.framework.base.common.utils.StringUtils;
 import com.eth.framework.base.sysMessage.model.SysErrorMessageModel;
 import com.eth.framework.base.sysMessage.model.SysMessageModel;
 import com.eth.framework.base.sysMessage.service.ISysErrorMessageService;
@@ -74,10 +73,6 @@ public class EthTaskServiceImpl implements IEtlTaskService {
                 //获取交易回执，交易回执返回的顺序其实和交易的顺序一致
                 String body = AlchemyUtils.alchemygetTransactionReceipts(blockNumber);
                 Map<String, Object> resultMap = JsonUtil.string2Obj(body);
-                if(resultMap.containsKey("error")){
-                    Map<String, Object> error = (Map<String, Object>) resultMap.get("error");
-                    throw new Exception("炼金术接口报错："+ StringUtils.valueOf(error.get("code")) +StringUtils.valueOf(error.get("message")));
-                }
                 Map result = (Map) resultMap.get("result");
                 if(result.containsKey("receipts")){
                     List<Map> receipts = (List<Map>) result.get("receipts");
@@ -147,6 +142,7 @@ public class EthTaskServiceImpl implements IEtlTaskService {
             }
         } finally {
             String message = "etlEthBlock消耗时间:"+(new Date().getTime() - beginTime.getTime()+"ms");
+            log.info(message);
             sysMessageService.addSysMessage(SysMessageModel.TYPE_ETHTASK, message, blockNumber);
         }
     }
@@ -200,9 +196,11 @@ public class EthTaskServiceImpl implements IEtlTaskService {
     @Override
     public void dealErrorEth() throws Exception {
         List<SysErrorMessageModel> errorList = sysErrorMessageService.listNotDealSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK);
+        CountDownLatch latch = new CountDownLatch((int)(errorList.size()));
         for(SysErrorMessageModel error:errorList){
-            etlEthBlock(error.getBlockNumber(), 0);
+            etlEthBlock(error.getBlockNumber(), 0, latch);
         }
+        latch.await();
         List<Long> ids = errorList.stream().map(SysErrorMessageModel::getId).collect(Collectors.toList());
         sysErrorMessageService.dealSysErrorMessage(ids);
     }

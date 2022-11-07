@@ -4,7 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.SocketAddress;
 import java.util.Date;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -57,20 +61,8 @@ public class AlchemyUtils {
                     .addHeader("Accept", "application/json")
                     .build();
             try {
-                int count = 0;
-                int max = 3;
-                while(count < max){
-                    Response response = null;
-                    try {
-                        response = client.newCall(request).execute();
-                        body = response.body().string();
-                        log.info("body:" + body);
-                        //如果成功了跳出循环
-                        break;
-                    } catch (Exception e) {
-                        count++;
-                    }
-                }
+                body = callResponse(client, request);
+                judgeResult(body);
             } catch (Exception e) {
                 log.info("error:"+url);
                 log.error(e.getMessage(), e);
@@ -114,6 +106,7 @@ public class AlchemyUtils {
             try {
                 body = callResponse(client, request);
                 log.info("body:" + body);
+                judgeResult(body);
             } catch (Exception e) {
                 log.info("error:"+url);
                 log.error(e.getMessage(), e);
@@ -125,6 +118,21 @@ public class AlchemyUtils {
 
         }
     }
+
+    /**
+     * 判断返回值是否报错
+     * @param body
+     * @throws Exception
+     */
+    private static void judgeResult(String body) throws Exception {
+        if(body.indexOf("\"error\":") > -1){
+            log.info(body);
+            Map<String, Object> resultMap = JsonUtil.string2Obj(body);
+            Map<String, Object> error = (Map<String, Object>) resultMap.get("error");
+            throw new Exception("炼金术接口报错："+ StringUtils.valueOf(error.get("code")) +StringUtils.valueOf(error.get("message")));
+        }
+    }
+
     private static String callResponse(OkHttpClient client, Request request) throws Exception{
 
         int count = 0;
@@ -145,6 +153,46 @@ public class AlchemyUtils {
             }
         }
         return body;
+    }/**
+     * 通过https://metadata.ens.domains/mainnet获取已过期得ens信息,得翻墙走代理
+     * 已过期的meta
+     * {"message":"'caizhuoyan.eth' is already been expired at Mon, 04 May 2020 00:00:00 GMT."}
+     * 未过期的meta
+     * {"is_normalized":true,"name":"rehbein.eth","description":"rehbein.eth, an ENS name.","attributes":[{"trait_type":"Created Date","display_type":"date","value":1500099683000},{"trait_type":"Length","display_type":"number","value":7},{"trait_type":"Segment Length","display_type":"number","value":7},{"trait_type":"Character Set","display_type":"string","value":"letter"},{"trait_type":"Registration Date","display_type":"date","value":1661223139000},{"trait_type":"Expiration Date","display_type":"date","value":1692780091000}],"name_length":7,"segment_length":7,"url":"https://app.ens.domains/name/rehbein.eth","version":0,"background_image":"https://metadata.ens.domains/mainnet/avatar/rehbein.eth","image":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image","image_url":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image"}
+     * @param raw
+     * @return
+     * @throws IOException
+     */
+    public static String getNFTMetadataByRaw(String raw) throws IOException{
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        // 设置代理地址
+        SocketAddress sa = new InetSocketAddress("127.0.0.1", 53998);
+        builder.proxy(new Proxy(Proxy.Type.HTTP, sa));
+        OkHttpClient client = builder.build();
+        {
+            String body = null;
+            Date beginTime = new Date();
+            String url = raw;
+            log.info("url:" + url);
+            Request request = new Request.Builder()
+                    .url(url)
+                    .get()
+                    .addHeader("Accept", "application/json")
+                    //                    .addHeader("X-API-KEY", "null")
+                    .build();
+            try {
+                body = callResponse(client, request);
+                log.info("body:" + body);
+            } catch (Exception e) {
+                log.info("error:"+url);
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
+            } finally {
+                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+            }
+            return body;
+
+        }
     }
     /**
      * 通过区块高度查询交易回执列表
@@ -165,7 +213,7 @@ public class AlchemyUtils {
      * "type":"0x0"}]}}
      * @throws IOException
      */
-    public static String alchemygetTransactionReceipts(Long blockNumber) throws IOException {
+    public static String alchemygetTransactionReceipts(Long blockNumber) throws Exception {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         //内容较长
         builder.connectTimeout(5, TimeUnit.MINUTES)
@@ -201,6 +249,7 @@ public class AlchemyUtils {
                     .build();
             try {
                 body = callResponse(client, request);
+                judgeResult(body);
             } catch (Exception e) {
                 log.info("error:"+url);
                 log.error(e.getMessage(), e);
@@ -252,6 +301,7 @@ public class AlchemyUtils {
             try {
                 body = callResponse(client, request);
                 log.info("body:" + body);
+                judgeResult(body);
             } catch (Exception e) {
                 log.info("error:"+url);
                 log.error(e.getMessage(), e);
@@ -272,9 +322,16 @@ public class AlchemyUtils {
 //        }
 //        //一个ens交易
 //        //https://cn.etherscan.com/tx/0x10dd605a4a917eff0e60492dfbeed7ba47320007c77a8b1a90f899f603a1ed89
-        String tokenId = "55410952201049487871791681327342603684221801302599016058612157535488542032089";
+//        String tokenId = "55410952201049487871791681327342603684221801302599016058612157535488542032089";
+//        try {
+//            getNFTMetadata(ENSCONSTRACTADDRESS, tokenId);
+//        } catch (IOException e) {
+//            log.info(e.getMessage(), e);
+//        }
+        String raw = "https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0x4cbedf505977ad2333f03571681875b18ea2e1837c0791da20ee246e3ea7f34c";
         try {
-            getNFTMetadata(ENSCONSTRACTADDRESS, tokenId);
+            String body = getNFTMetadataByRaw(raw);
+            System.out.println(body);
         } catch (IOException e) {
             log.info(e.getMessage(), e);
         }
