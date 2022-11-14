@@ -19,7 +19,7 @@ public interface ISysErrorMessageService {
      * @param type
      * @return
      */
-    List<SysErrorMessageModel> listNotDealSysErrorMessage(String type);
+    List<SysErrorMessageModel> listNotDealSysErrorMessage(String type, Integer limit);
     /**
      * 处理错误日志
      * @param id

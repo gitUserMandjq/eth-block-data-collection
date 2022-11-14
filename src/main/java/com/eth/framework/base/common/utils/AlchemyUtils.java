@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -331,9 +333,17 @@ public class AlchemyUtils {
         String raw = "https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0x4cbedf505977ad2333f03571681875b18ea2e1837c0791da20ee246e3ea7f34c";
         try {
             String body = getNFTMetadataByRaw(raw);
-            System.out.println(body);
+            Map map = JsonUtil.string2Obj(body);
+            String message = (String) map.get("message");
+            String[] split = message.split(" is already been expired at ");
+            String domain = split[0];
+            domain = domain.substring(1, domain.length() - 1);
+            String date = split[1];
+            SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz.", Locale.US);
         } catch (IOException e) {
             log.info(e.getMessage(), e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 //        {
 //            String body = alchemygetTransactionReceipts(14919291L);

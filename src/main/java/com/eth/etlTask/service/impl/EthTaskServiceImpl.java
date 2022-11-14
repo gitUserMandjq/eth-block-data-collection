@@ -111,6 +111,7 @@ public class EthTaskServiceImpl implements IEtlTaskService {
                                         ethEnsDTO = new EthEnsDTO();
                                         ethEnsDTO.setMeta(nftMetadata);
                                         ethEnsDTO.setTokenId(tokenId);
+                                        ethEnsDTO.setAddress(address);
                                         ensMap.put(tokenId, ethEnsDTO);
                                     }
                                     ethEnsDTO.setFrom(from);
@@ -195,7 +196,7 @@ public class EthTaskServiceImpl implements IEtlTaskService {
      */
     @Override
     public void dealErrorEth() throws Exception {
-        List<SysErrorMessageModel> errorList = sysErrorMessageService.listNotDealSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK);
+        List<SysErrorMessageModel> errorList = sysErrorMessageService.listNotDealSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK, 500);
         CountDownLatch latch = new CountDownLatch((int)(errorList.size()));
         for(SysErrorMessageModel error:errorList){
             etlEthBlock(error.getBlockNumber(), 0, latch);
@@ -203,6 +204,11 @@ public class EthTaskServiceImpl implements IEtlTaskService {
         latch.await();
         List<Long> ids = errorList.stream().map(SysErrorMessageModel::getId).collect(Collectors.toList());
         sysErrorMessageService.dealSysErrorMessage(ids);
+        if(errorList.size() == 0){
+            return;
+        }else{
+            dealErrorEth();
+        }
     }
 
     private static HashMap<String, EthTxnModel> dealTransactionMap(EthBlock.Block block, EthBlockModel blockModel) {

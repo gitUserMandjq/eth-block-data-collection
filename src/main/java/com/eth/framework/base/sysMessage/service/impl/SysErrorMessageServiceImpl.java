@@ -1,5 +1,7 @@
 package com.eth.framework.base.sysMessage.service.impl;
 
+import com.eth.framework.base.common.model.PageParam;
+import com.eth.framework.base.common.utils.PageUtils;
 import com.eth.framework.base.sysMessage.dao.SysErrorMessageDao;
 import com.eth.framework.base.sysMessage.model.SysErrorMessageModel;
 import com.eth.framework.base.sysMessage.service.ISysErrorMessageService;
@@ -38,8 +40,10 @@ public class SysErrorMessageServiceImpl implements ISysErrorMessageService {
      * @return
      */
     @Override
-    public List<SysErrorMessageModel> listNotDealSysErrorMessage(String type) {
-        List<SysErrorMessageModel> list = sysErrorMessageDao.findByTypeAndStatus(type, 0);
+    public List<SysErrorMessageModel> listNotDealSysErrorMessage(String type, Integer limit) {
+        PageParam pageInfo = PageUtils.constructPageParam(1, limit);
+        //每次最多处理1000条
+        List<SysErrorMessageModel> list = sysErrorMessageDao.findByTypeAndStatus(type, 0, pageInfo);
         return list;
     }
     /**

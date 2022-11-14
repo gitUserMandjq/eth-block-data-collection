@@ -7,13 +7,14 @@ import com.eth.framework.base.common.model.PageData;
 import com.eth.framework.base.common.model.PageParam;
 
 import java.io.IOException;
+import java.text.ParseException;
 
 public interface IEthEnsInfoService {
     /**
      * 新增或更新ens
      * @param ensDTO
      */
-    void insertOrUpdateEns(EthEnsDTO ensDTO) throws IOException;
+    void insertOrUpdateEns(EthEnsDTO ensDTO) throws IOException, ParseException;
     /**
      * 查询ens列表
      * @param qo

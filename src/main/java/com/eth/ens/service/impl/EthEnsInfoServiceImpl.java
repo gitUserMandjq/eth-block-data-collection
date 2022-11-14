@@ -8,6 +8,7 @@ import com.eth.ens.model.EthEnsInfoModel;
 import com.eth.ens.service.IEthEnsInfoService;
 import com.eth.framework.base.common.model.PageData;
 import com.eth.framework.base.common.model.PageParam;
+import com.eth.framework.base.common.utils.AlchemyUtils;
 import com.eth.framework.base.common.utils.JsonUtil;
 import com.eth.framework.base.common.utils.PageUtils;
 import com.eth.framework.base.common.utils.StringUtils;
@@ -17,10 +18,9 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -32,7 +32,7 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
      * @param ensDTO
      */
     @Override
-    public void insertOrUpdateEns(EthEnsDTO ensDTO) throws IOException {
+    public void insertOrUpdateEns(EthEnsDTO ensDTO) throws IOException, ParseException {
         Optional<EthEnsInfoModel> one = ethEnsInfoDao.findById(ensDTO.getTokenId());
         EthEnsInfoModel ethEnsInfoModel = null;
         String meta = ensDTO.getMeta();
@@ -40,6 +40,7 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
             ethEnsInfoModel = new EthEnsInfoModel();
             ethEnsInfoModel.setTokenId(ensDTO.getTokenId());
             ethEnsInfoModel.setMeta(meta);
+            ethEnsInfoModel.setConstractAddress(ensDTO.getAddress());
         }else{
             ethEnsInfoModel = one.get();
         }
@@ -69,10 +70,9 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
         return pageData;
     }
 
-    private static void dealEnsMeta(EthEnsInfoModel ethEnsInfoModel, String meta) throws IOException {
+    private static void dealEnsMeta(EthEnsInfoModel ethEnsInfoModel, String meta) throws IOException, ParseException {
         Map<String, Object> map = JsonUtil.string2Obj(meta);
         String title = (String) map.get("title");
-        String address = "";
         String domain = "";
         String image = "";
         String backgroundImage = "";
@@ -89,12 +89,21 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
             //{"message":"'caizhuoyan.eth' is already been expired at Mon, 04 May 2020 00:00:00 GMT."}
             Map tokenUri = (Map) map.get("tokenUri");
             String raw = (String) tokenUri.get("raw");
+            String body = AlchemyUtils.getNFTMetadataByRaw(raw);
+            Map rawmap = JsonUtil.string2Obj(body);
+            String message = (String) rawmap.get("message");
+            String[] split = message.split(" is already been expired at ");
+            domain = split[0];
+            domain = domain.substring(1, domain.length() - 1);
+            length = domain.length() - 4;//减去.eth的长度
+            String date = split[1];
+            SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz.", Locale.US);
+            expirationDate = sdf.parse(date);
         }else{
             //{"contract":{"address":"0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"},"id":{"tokenId":"0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c","tokenMetadata":{"tokenType":"ERC721"}},"title":"rehbein.eth","description":"rehbein.eth, an ENS name.","tokenUri":{"raw":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/105163109881267868532041562026418602960922071549544155763322457683184960142748","gateway":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/105163109881267868532041562026418602960922071549544155763322457683184960142748"},"media":[{"raw":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image","gateway":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image"}],"metadata":{"background_image":"https://metadata.ens.domains/mainnet/avatar/rehbein.eth","image":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image","is_normalized":true,"segment_length":7,"image_url":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image","name":"rehbein.eth","description":"rehbein.eth, an ENS name.","attributes":[{"display_type":"date","value":1500099683000,"trait_type":"Created Date"},{"display_type":"number","value":7,"trait_type":"Length"},{"display_type":"number","value":7,"trait_type":"Segment Length"},{"display_type":"string","value":"letter","trait_type":"Character Set"},{"display_type":"date","value":1661223139000,"trait_type":"Registration Date"},{"display_type":"date","value":1692780091000,"trait_type":"Expiration Date"}],"name_length":7,"version":0,"url":"https://app.ens.domains/name/rehbein.eth"},"timeLastUpdated":"2022-11-07T06:22:52.532Z","contractMetadata":{"tokenType":"ERC721","openSea":{"floorPrice":8.8E-4,"collectionName":"ENS: Ethereum Name Service","safelistRequestStatus":"verified","imageUrl":"https://i.seadn.io/gae/0cOqWoYA7xL9CkUjGlxsjreSYBdrUBE0c6EO1COG4XE8UeP-Z30ckqUNiL872zHQHQU5MUNMNhfDpyXIP17hRSC5HQ?w=500&auto=format","description":"Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.","externalUrl":"https://ens.domains","twitterUsername":"ensdomains","lastIngestedAt":"2022-11-01T15:30:04.000Z"}}}
             //https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/105163109881267868532041562026418602960922071549544155763322457683184960142748
             //{"is_normalized":true,"name":"rehbein.eth","description":"rehbein.eth, an ENS name.","attributes":[{"trait_type":"Created Date","display_type":"date","value":1500099683000},{"trait_type":"Length","display_type":"number","value":7},{"trait_type":"Segment Length","display_type":"number","value":7},{"trait_type":"Character Set","display_type":"string","value":"letter"},{"trait_type":"Registration Date","display_type":"date","value":1661223139000},{"trait_type":"Expiration Date","display_type":"date","value":1692780091000}],"name_length":7,"segment_length":7,"url":"https://app.ens.domains/name/rehbein.eth","version":0,"background_image":"https://metadata.ens.domains/mainnet/avatar/rehbein.eth","image":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image","image_url":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c/image"}
             Map contract = (Map) map.get("contract");
-            address = (String) contract.get("address");
             Map metadata = (Map) map.get("metadata");
             domain = (String) metadata.get("name");
             image = (String) metadata.get("image");
@@ -121,7 +130,6 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
                 }
             }
         }
-        ethEnsInfoModel.setConstractAddress(address);
         ethEnsInfoModel.setDomain(domain);
         ethEnsInfoModel.setImage(image);
         ethEnsInfoModel.setBackgroundImage(backgroundImage);
@@ -160,7 +168,7 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ParseException {
         String meta = "{\"contract\":{\"address\":\"0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85\"},\"id\":{\"tokenId\":\"0xa1054194986dd041b30c44125ee3cbf09b3c7c5583671af365c1f3215ace009d\",\"tokenMetadata\":{\"tokenType\":\"ERC721\"}},\"title\":\"0357.eth\",\"description\":\"0357.eth, an ENS name.\",\"tokenUri\":{\"raw\":\"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xa1054194986dd041b30c44125ee3cbf09b3c7c5583671af365c1f3215ace009d\",\"gateway\":\"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xa1054194986dd041b30c44125ee3cbf09b3c7c5583671af365c1f3215ace009d\"},\"media\":[{\"raw\":\"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xa1054194986dd041b30c44125ee3cbf09b3c7c5583671af365c1f3215ace009d/image\",\"gateway\":\"https://res.cloudinary.com/alchemyapi/image/upload/mainnet/de91f29381af44bda4ada2ea64e8bf22.svg\",\"thumbnail\":\"https://res.cloudinary.com/alchemyapi/image/upload/w_256,h_256/mainnet/de91f29381af44bda4ada2ea64e8bf22.svg\",\"format\":\"svg\",\"bytes\":1040926}],\"metadata\":{\"background_image\":\"https://metadata.ens.domains/mainnet/avatar/0357.eth\",\"image\":\"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xa1054194986dd041b30c44125ee3cbf09b3c7c5583671af365c1f3215ace009d/image\",\"is_normalized\":true,\"segment_length\":4,\"image_url\":\"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xa1054194986dd041b30c44125ee3cbf09b3c7c5583671af365c1f3215ace009d/image\",\"name\":\"0357.eth\",\"description\":\"0357.eth, an ENS name.\",\"attributes\":[{\"display_type\":\"date\",\"value\":1651010778000,\"trait_type\":\"Created Date\"},{\"display_type\":\"number\",\"value\":4,\"trait_type\":\"Length\"},{\"display_type\":\"number\",\"value\":4,\"trait_type\":\"Segment Length\"},{\"display_type\":\"string\",\"value\":\"digit\",\"trait_type\":\"Character Set\"},{\"display_type\":\"date\",\"value\":1651010778000,\"trait_type\":\"Registration Date\"},{\"display_type\":\"date\",\"value\":1682567730000,\"trait_type\":\"Expiration Date\"}],\"name_length\":4,\"version\":0,\"url\":\"https://app.ens.domains/name/0357.eth\"},\"timeLastUpdated\":\"2022-10-03T15:32:17.011Z\",\"contractMetadata\":{\"name\":\"\",\"symbol\":\"\",\"totalSupply\":\"\",\"tokenType\":\"UNKNOWN\"}}";
         EthEnsInfoModel ethEnsInfoModel = new EthEnsInfoModel();
         ethEnsInfoModel.setMeta(meta);
