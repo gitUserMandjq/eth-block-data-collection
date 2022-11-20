@@ -22,12 +22,13 @@ public class SysMessageService implements ISysMessageService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public SysMessageModel addSysMessage(String type, String message, Long blockNumber) {
+    public SysMessageModel addSysMessage(String type, String message, Long blockNumber, Long costTime) {
         SysMessageModel model = new SysMessageModel();
         model.setType(type);
         model.setMessage(message);
         model.setCreateTime(new Date());
         model.setBlockNumber(blockNumber);
+        model.setCostTime(costTime);
         model = sysMessageDao.save(model);
         return model;
     }

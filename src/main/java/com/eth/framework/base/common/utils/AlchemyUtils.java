@@ -7,11 +7,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -38,6 +34,9 @@ public class AlchemyUtils {
     }
     public static String getAlchemyPath(){
         return HOST + "/v2/" + getRandomEthHost();
+    }
+    public static String getAlchemyNftPath(){
+        return HOST + "/nft"+ "/v2/" + getRandomEthHost();
     }
 
     /**
@@ -120,6 +119,169 @@ public class AlchemyUtils {
 
         }
     }
+    public static class NFTMetadataBatchParam{
+        private boolean refreshCache = false;
+        private List<Tokens> tokens = new ArrayList<>();
+        public Tokens createToken(String contractAddress, String tokenId, String tokenType){
+            return new Tokens(contractAddress, tokenId, tokenType);
+        }
+        public class Tokens{
+            private String tokenId;
+            private String tokenType = "ERC721";
+            private String contractAddress;
+
+            public Tokens(String contractAddress, String tokenId, String tokenType) {
+                this.tokenId = tokenId;
+                this.tokenType = tokenType;
+                this.contractAddress = contractAddress;
+            }
+
+            public String getTokenId() {
+                return tokenId;
+            }
+
+            public void setTokenId(String tokenId) {
+                this.tokenId = tokenId;
+            }
+
+            public String getTokenType() {
+                return tokenType;
+            }
+
+            public void setTokenType(String tokenType) {
+                this.tokenType = tokenType;
+            }
+
+            public String getContractAddress() {
+                return contractAddress;
+            }
+
+            public void setContractAddress(String contractAddress) {
+                this.contractAddress = contractAddress;
+            }
+        }
+
+        public List<Tokens> getTokens() {
+            return tokens;
+        }
+
+        public void setTokens(List<Tokens> tokens) {
+            this.tokens = tokens;
+        }
+
+        public boolean isRefreshCache() {
+            return refreshCache;
+        }
+
+        public void setRefreshCache(boolean refreshCache) {
+            this.refreshCache = refreshCache;
+        }
+
+    }
+    /**
+     * 获得nft的数据
+     * {"contract":{"address":"0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85"},"id":{"tokenId":"102858502995565732640093888466685851349467133070378883292988898339044383603257","tokenMetadata":{"tokenType":"ERC721"}},"title":"manatees.eth","description":"manatees.eth, an ENS name.","tokenUri":{"raw":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/102858502995565732640093888466685851349467133070378883292988898339044383603257","gateway":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/102858502995565732640093888466685851349467133070378883292988898339044383603257"},"media":[{"raw":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe367d97f9dd4e46f206e64aa04ec4cb0da200513b00eed0235bd8c2643c93a39/image","gateway":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe367d97f9dd4e46f206e64aa04ec4cb0da200513b00eed0235bd8c2643c93a39/image"}],"metadata":{"is_normalized":true,"name":"manatees.eth","description":"manatees.eth, an ENS name.","attributes":[{"trait_type":"Created Date","display_type":"date","value":1651107892000},{"trait_type":"Length","display_type":"number","value":8},{"trait_type":"Segment Length","display_type":"number","value":8},{"trait_type":"Character Set","display_type":"string","value":"letter"},{"trait_type":"Registration Date","display_type":"date","value":1651107892000},{"trait_type":"Expiration Date","display_type":"date","value":1808892652000}],"name_length":8,"segment_length":8,"url":"https://app.ens.domains/name/manatees.eth","version":0,"background_image":"https://metadata.ens.domains/mainnet/avatar/manatees.eth","image":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe367d97f9dd4e46f206e64aa04ec4cb0da200513b00eed0235bd8c2643c93a39/image","image_url":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe367d97f9dd4e46f206e64aa04ec4cb0da200513b00eed0235bd8c2643c93a39/image"},"timeLastUpdated":"2022-09-11T10:23:10.626Z"}
+     * @param contractAddress
+     * @param tokenIds
+     * @param tokenType ERC721
+     * @return
+     * @throws IOException
+     */
+    public static String getNFTMetadataBatch(String contractAddress, Set<String> tokenIds, String tokenType) throws IOException{
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        builder.connectTimeout(2, TimeUnit.MINUTES)
+                .writeTimeout(2, TimeUnit.MINUTES)
+                .readTimeout(2, TimeUnit.MINUTES);
+        // 设置代理地址
+//        SocketAddress sa = new InetSocketAddress("127.0.0.1", 60959);
+//        builder.proxy(new Proxy(Proxy.Type.HTTP, sa));
+        OkHttpClient client = builder.build();
+        {
+            String body = null;
+            Date beginTime = new Date();
+            String url = getAlchemyNftPath() + "/getNFTMetadataBatch";
+            log.info("url:" + url);
+            //组装请求参数
+            //{
+            //	"tokens": [{
+            //		"tokenId": "55410952201049487871791681327342603684221801302599016058612157535488542032089",
+            //		"tokenType": "ERC721",
+            //		"contractAddress": "0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85"
+            //	}],
+            //	"refreshCache": false
+            //}
+            MediaType mediaType = MediaType.parse("application/json");
+            NFTMetadataBatchParam paraMap = new NFTMetadataBatchParam();
+            for(String tokenId:tokenIds){
+                paraMap.getTokens().add(paraMap.createToken(contractAddress, tokenId, tokenType));
+            }
+            String requestParamStr = JsonUtil.object2String(paraMap);
+            log.info("requestParam:"+requestParamStr);
+            RequestBody requestBody = RequestBody.create(mediaType, requestParamStr);
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(requestBody)
+                    .addHeader("accept", "application/json")
+                    .addHeader("content-type", "application/json")
+                    .build();
+            try {
+                body = callResponse(client, request);
+                log.info("body:" + body);
+                judgeResult(body);
+            } catch (Exception e) {
+                log.info("error:"+url);
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
+            } finally {
+                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+            }
+            return body;
+
+        }
+    }
+    /**
+     * 获得nft的数据
+     * {"contract":{"address":"0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85"},"id":{"tokenId":"102858502995565732640093888466685851349467133070378883292988898339044383603257","tokenMetadata":{"tokenType":"ERC721"}},"title":"manatees.eth","description":"manatees.eth, an ENS name.","tokenUri":{"raw":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/102858502995565732640093888466685851349467133070378883292988898339044383603257","gateway":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/102858502995565732640093888466685851349467133070378883292988898339044383603257"},"media":[{"raw":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe367d97f9dd4e46f206e64aa04ec4cb0da200513b00eed0235bd8c2643c93a39/image","gateway":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe367d97f9dd4e46f206e64aa04ec4cb0da200513b00eed0235bd8c2643c93a39/image"}],"metadata":{"is_normalized":true,"name":"manatees.eth","description":"manatees.eth, an ENS name.","attributes":[{"trait_type":"Created Date","display_type":"date","value":1651107892000},{"trait_type":"Length","display_type":"number","value":8},{"trait_type":"Segment Length","display_type":"number","value":8},{"trait_type":"Character Set","display_type":"string","value":"letter"},{"trait_type":"Registration Date","display_type":"date","value":1651107892000},{"trait_type":"Expiration Date","display_type":"date","value":1808892652000}],"name_length":8,"segment_length":8,"url":"https://app.ens.domains/name/manatees.eth","version":0,"background_image":"https://metadata.ens.domains/mainnet/avatar/manatees.eth","image":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe367d97f9dd4e46f206e64aa04ec4cb0da200513b00eed0235bd8c2643c93a39/image","image_url":"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xe367d97f9dd4e46f206e64aa04ec4cb0da200513b00eed0235bd8c2643c93a39/image"},"timeLastUpdated":"2022-09-11T10:23:10.626Z"}
+     * @param contractAddress
+     * @return
+     * @throws IOException
+     */
+    public static String getNftsForContract(String contractAddress) throws IOException{
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        builder.connectTimeout(5, TimeUnit.MINUTES)
+                .writeTimeout(5, TimeUnit.MINUTES)
+                .readTimeout(5, TimeUnit.MINUTES);
+        // 设置代理地址
+//        SocketAddress sa = new InetSocketAddress("127.0.0.1", 60959);
+//        builder.proxy(new Proxy(Proxy.Type.HTTP, sa));
+        OkHttpClient client = builder.build();
+        {
+            String body = null;
+            Date beginTime = new Date();
+            String url = getAlchemyPath() + "/getNftsForContract?" +
+                    "contractAddress=" + contractAddress + "&startToken=" + 0 + "&omitMetadata=false";
+            log.info("url:" + url);
+            Request request = new Request.Builder()
+                    .url(url)
+                    .get()
+                    .addHeader("Accept", "application/json")
+                    //                    .addHeader("X-API-KEY", "null")
+                    .build();
+            try {
+                body = callResponse(client, request);
+                log.info("body:" + body);
+                judgeResult(body);
+            } catch (Exception e) {
+                log.info("error:"+url);
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
+            } finally {
+                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+            }
+            return body;
+
+        }
+    }
 
     /**
      * 判断返回值是否报错
@@ -148,6 +310,7 @@ public class AlchemyUtils {
                 break;
             } catch (Exception e) {
                 count++;
+                Thread.sleep(1000L);
                 log.info("retry:"+count);
                 if(count >= max){
                     throw e;
@@ -322,29 +485,38 @@ public class AlchemyUtils {
 //        } catch (IOException e) {
 //            log.info(e.getMessage(), e);
 //        }
-//        //一个ens交易
-//        //https://cn.etherscan.com/tx/0x10dd605a4a917eff0e60492dfbeed7ba47320007c77a8b1a90f899f603a1ed89
-//        String tokenId = "55410952201049487871791681327342603684221801302599016058612157535488542032089";
-//        try {
-//            getNFTMetadata(ENSCONSTRACTADDRESS, tokenId);
-//        } catch (IOException e) {
-//            log.info(e.getMessage(), e);
-//        }
-        String raw = "https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0x4cbedf505977ad2333f03571681875b18ea2e1837c0791da20ee246e3ea7f34c";
+        //一个ens交易
+        //https://cn.etherscan.com/tx/0x10dd605a4a917eff0e60492dfbeed7ba47320007c77a8b1a90f899f603a1ed89
+        String tokenId = "55410952201049487871791681327342603684221801302599016058612157535488542032089";
+        //未过期token
+        String tokenIdunexpired = "0xe88035fbf85c5a3294f84d9cfbe92cdcd2ade4db4d18a1980236733458dffd9c";//
+        //已过期token
+        String tokenIdexpired = "0x4cbedf505977ad2333f03571681875b18ea2e1837c0791da20ee246e3ea7f34c";//
         try {
-            String body = getNFTMetadataByRaw(raw);
-            Map map = JsonUtil.string2Obj(body);
-            String message = (String) map.get("message");
-            String[] split = message.split(" is already been expired at ");
-            String domain = split[0];
-            domain = domain.substring(1, domain.length() - 1);
-            String date = split[1];
-            SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz.", Locale.US);
+            getNFTMetadata(ENSCONSTRACTADDRESS, tokenIdexpired);
+            Set<String> tokenIds = new HashSet<>();
+            tokenIds.add(tokenId);
+            tokenIds.add(tokenIdunexpired);
+            tokenIds.add(tokenIdexpired);
+            getNFTMetadataBatch(ENSCONSTRACTADDRESS, tokenIds, "ERC721");
         } catch (IOException e) {
             log.info(e.getMessage(), e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
+//        String raw = "https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0x4cbedf505977ad2333f03571681875b18ea2e1837c0791da20ee246e3ea7f34c";
+//        try {
+//            String body = getNFTMetadataByRaw(raw);
+//            Map map = JsonUtil.string2Obj(body);
+//            String message = (String) map.get("message");
+//            String[] split = message.split(" is already been expired at ");
+//            String domain = split[0];
+//            domain = domain.substring(1, domain.length() - 1);
+//            String date = split[1];
+//            SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz.", Locale.US);
+//        } catch (IOException e) {
+//            log.info(e.getMessage(), e);
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
 //        {
 //            String body = alchemygetTransactionReceipts(14919291L);
 //            Map result = JsonUtil.string2Obj(body);

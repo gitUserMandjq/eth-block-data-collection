@@ -26,11 +26,14 @@ class SpringbootWeb3ApplicationTests {
   EthEnsInfoDao ethEnsInfoDao;
   @Test
   void contextLoads() throws Exception {
-//    etlTaskService.etlEthBlock(14669839L);
+//    etlTaskService.etlEthBlock(14669839L, 3);
+//    etlTaskService.etlEns(14669839L, 3);
 //    Long high = 10000000L;
 //    Long start = 9380422L;
-//    dealEtlTask(start, high);
-    etlTaskService.dealErrorEth();
+    Long start = 14669839L;
+    Long high = start + 5000L;
+    dealEtlTask(start, high);
+//    etlTaskService.dealErrorEth();
   }
 
   private void dealEtlTask(Long start, Long high) throws InterruptedException {
@@ -38,11 +41,12 @@ class SpringbootWeb3ApplicationTests {
     Semaphore lock = new Semaphore(20);
     Date startTime = new Date();
     for(long i = start; i<= high; i++){
+//      etlTaskService.etlEns(i, 0, latch, lock);
       etlTaskService.etlEthBlock(i, 0, latch, lock);
       System.out.println("allTime"+i+":"+(new Date().getTime() - startTime.getTime()));
     }
-    System.out.println("allTime:"+(new Date().getTime() - startTime.getTime()));
     latch.await();
+    System.out.println("totalAllTime:"+(new Date().getTime() - startTime.getTime()));
   }
 //  @Test
 //  void contextLoads2() throws Exception {

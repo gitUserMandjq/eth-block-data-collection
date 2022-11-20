@@ -71,7 +71,7 @@ public class EthEnsInfoModel {
     @Column(name="openSeaListingDate")
     private Date openSeaListingDate;//上市时间
     public static final Long createBlockHeight = 9380422L;//合约创建高度
-
+    public static final String tokenType = "ERC721";
     @Override
     public String toString() {
         return "EthEnsInfoModel{" +

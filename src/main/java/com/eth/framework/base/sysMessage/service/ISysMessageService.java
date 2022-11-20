@@ -10,5 +10,5 @@ public interface ISysMessageService {
      * @param blockNumber
      * @return
      */
-    SysMessageModel addSysMessage(String type, String message, Long blockNumber);
+    SysMessageModel addSysMessage(String type, String message, Long blockNumber, Long costTime);
 }

@@ -35,23 +35,25 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
     public void insertOrUpdateEns(EthEnsDTO ensDTO) throws IOException, ParseException {
         Optional<EthEnsInfoModel> one = ethEnsInfoDao.findById(ensDTO.getTokenId());
         EthEnsInfoModel ethEnsInfoModel = null;
-        String meta = ensDTO.getMeta();
+        Map<String, Object> map = ensDTO.getMeta();
         if(!one.isPresent()){
             ethEnsInfoModel = new EthEnsInfoModel();
             ethEnsInfoModel.setTokenId(ensDTO.getTokenId());
-            ethEnsInfoModel.setMeta(meta);
+            ethEnsInfoModel.setMeta(JsonUtil.object2String(map));
             ethEnsInfoModel.setConstractAddress(ensDTO.getAddress());
         }else{
             ethEnsInfoModel = one.get();
         }
-        dealEnsMeta(ethEnsInfoModel, meta);
+        dealEnsMeta(ethEnsInfoModel, map);
         EthTxnModel txn = ensDTO.getTxn();
-        Long timestamp = txn.getTimestamp();
-        if(ethEnsInfoModel.getLastTxnTime() == null || ethEnsInfoModel.getLastTxnTime().getTime() <= timestamp){
-            ethEnsInfoModel.setLastTxnTime(new Date(timestamp));
-            ethEnsInfoModel.setLastTxnHash(txn.getTxnHash());
-            ethEnsInfoModel.setLastTxnFee(txn.getEthValue().longValue());
-            ethEnsInfoModel.setOwner(ensDTO.getTo());
+        if(txn != null){
+            Long timestamp = txn.getTimestamp();
+            if(ethEnsInfoModel.getLastTxnTime() == null || ethEnsInfoModel.getLastTxnTime().getTime() <= timestamp){
+                ethEnsInfoModel.setLastTxnTime(new Date(timestamp));
+                ethEnsInfoModel.setLastTxnHash(txn.getTxnHash());
+                ethEnsInfoModel.setLastTxnFee(txn.getEthValue().longValue());
+                ethEnsInfoModel.setOwner(ensDTO.getTo());
+            }
         }
         log.info(JsonUtil.object2String(ethEnsInfoModel));
         ethEnsInfoDao.save(ethEnsInfoModel);
@@ -70,8 +72,7 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
         return pageData;
     }
 
-    private static void dealEnsMeta(EthEnsInfoModel ethEnsInfoModel, String meta) throws IOException, ParseException {
-        Map<String, Object> map = JsonUtil.string2Obj(meta);
+    private static void dealEnsMeta(EthEnsInfoModel ethEnsInfoModel, Map<String, Object> map) throws IOException, ParseException {
         String title = (String) map.get("title");
         String domain = "";
         String image = "";
@@ -172,7 +173,8 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
         String meta = "{\"contract\":{\"address\":\"0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85\"},\"id\":{\"tokenId\":\"0xa1054194986dd041b30c44125ee3cbf09b3c7c5583671af365c1f3215ace009d\",\"tokenMetadata\":{\"tokenType\":\"ERC721\"}},\"title\":\"0357.eth\",\"description\":\"0357.eth, an ENS name.\",\"tokenUri\":{\"raw\":\"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xa1054194986dd041b30c44125ee3cbf09b3c7c5583671af365c1f3215ace009d\",\"gateway\":\"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xa1054194986dd041b30c44125ee3cbf09b3c7c5583671af365c1f3215ace009d\"},\"media\":[{\"raw\":\"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xa1054194986dd041b30c44125ee3cbf09b3c7c5583671af365c1f3215ace009d/image\",\"gateway\":\"https://res.cloudinary.com/alchemyapi/image/upload/mainnet/de91f29381af44bda4ada2ea64e8bf22.svg\",\"thumbnail\":\"https://res.cloudinary.com/alchemyapi/image/upload/w_256,h_256/mainnet/de91f29381af44bda4ada2ea64e8bf22.svg\",\"format\":\"svg\",\"bytes\":1040926}],\"metadata\":{\"background_image\":\"https://metadata.ens.domains/mainnet/avatar/0357.eth\",\"image\":\"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xa1054194986dd041b30c44125ee3cbf09b3c7c5583671af365c1f3215ace009d/image\",\"is_normalized\":true,\"segment_length\":4,\"image_url\":\"https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0xa1054194986dd041b30c44125ee3cbf09b3c7c5583671af365c1f3215ace009d/image\",\"name\":\"0357.eth\",\"description\":\"0357.eth, an ENS name.\",\"attributes\":[{\"display_type\":\"date\",\"value\":1651010778000,\"trait_type\":\"Created Date\"},{\"display_type\":\"number\",\"value\":4,\"trait_type\":\"Length\"},{\"display_type\":\"number\",\"value\":4,\"trait_type\":\"Segment Length\"},{\"display_type\":\"string\",\"value\":\"digit\",\"trait_type\":\"Character Set\"},{\"display_type\":\"date\",\"value\":1651010778000,\"trait_type\":\"Registration Date\"},{\"display_type\":\"date\",\"value\":1682567730000,\"trait_type\":\"Expiration Date\"}],\"name_length\":4,\"version\":0,\"url\":\"https://app.ens.domains/name/0357.eth\"},\"timeLastUpdated\":\"2022-10-03T15:32:17.011Z\",\"contractMetadata\":{\"name\":\"\",\"symbol\":\"\",\"totalSupply\":\"\",\"tokenType\":\"UNKNOWN\"}}";
         EthEnsInfoModel ethEnsInfoModel = new EthEnsInfoModel();
         ethEnsInfoModel.setMeta(meta);
-        dealEnsMeta(ethEnsInfoModel, meta);
+        Map map = JsonUtil.string2Obj(meta);
+        dealEnsMeta(ethEnsInfoModel, map);
         System.out.println(ethEnsInfoModel);
     }
 }

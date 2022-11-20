@@ -16,5 +16,6 @@ public class SysMessageModel {
     private String message;//消息内容
     private Date createTime;//提醒时间
     private Long blockNumber;//区块高度
+    private Long costTime;//消耗时间
     public static final String TYPE_ETHTASK = "ethtask";
 }
