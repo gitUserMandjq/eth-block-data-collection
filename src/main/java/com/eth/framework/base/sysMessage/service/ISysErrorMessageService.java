@@ -13,6 +13,14 @@ public interface ISysErrorMessageService {
      * @return
      */
     SysErrorMessageModel addSysErrorMessage(String type, String message, Long blockNumber);
+    /**
+     * 新增错误日志
+     * @param type
+     * @param message
+     * @param blockNumber
+     * @return
+     */
+    void addSysErrorMessage(String type, String message, List<Long> blockNumber);
 
     /**
      * 查询未处理的错误日志

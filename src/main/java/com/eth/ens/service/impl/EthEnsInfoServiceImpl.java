@@ -15,12 +15,14 @@ import com.eth.framework.base.common.utils.StringUtils;
 import com.eth.transaction.model.EthTxnModel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -57,6 +59,42 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
         }
         log.info(JsonUtil.object2String(ethEnsInfoModel));
         ethEnsInfoDao.save(ethEnsInfoModel);
+    }
+    /**
+     * 新增或更新ens
+     * @param ensDTOList
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchInsertOrUpdateEns(List<EthEnsDTO> ensDTOList) throws Exception {
+        List<String> tokenIds = ensDTOList.stream().map(EthEnsDTO::getTokenId).collect(Collectors.toList());
+        List<EthEnsInfoModel> ensList = ethEnsInfoDao.listEnsByIds(tokenIds);
+        Map<String, EthEnsInfoModel> ensMap = ensList.stream().collect(Collectors.toMap(EthEnsInfoModel::getTokenId, v -> v));
+        List<EthEnsInfoModel> addOrUpdateList = new ArrayList<>();
+        for(EthEnsDTO ensDTO:ensDTOList){
+            Map<String, Object> map = ensDTO.getMeta();
+            EthEnsInfoModel ethEnsInfoModel = ensMap.get(ensDTO.getTokenId());
+            if(ethEnsInfoModel == null){
+                ethEnsInfoModel = new EthEnsInfoModel();
+                ethEnsInfoModel.setTokenId(ensDTO.getTokenId());
+                ethEnsInfoModel.setMeta(JsonUtil.object2String(map));
+                ethEnsInfoModel.setConstractAddress(ensDTO.getAddress());
+            }
+            dealEnsMeta(ethEnsInfoModel, map);
+            EthTxnModel txn = ensDTO.getTxn();
+            if(txn != null){
+                Long timestamp = txn.getTimestamp();
+                if(ethEnsInfoModel.getLastTxnTime() == null || ethEnsInfoModel.getLastTxnTime().getTime() <= timestamp){
+                    ethEnsInfoModel.setLastTxnTime(new Date(timestamp));
+                    ethEnsInfoModel.setLastTxnHash(txn.getTxnHash());
+                    ethEnsInfoModel.setLastTxnFee(txn.getEthValue().longValue());
+                    ethEnsInfoModel.setOwner(ensDTO.getTo());
+                }
+            }
+            log.info(JsonUtil.object2String(ethEnsInfoModel));
+            addOrUpdateList.add(ethEnsInfoModel);
+        }
+        ethEnsInfoDao.batchInsertModel(addOrUpdateList);
     }
     /**
      * 查询ens列表

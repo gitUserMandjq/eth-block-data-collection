@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 
 
 @Repository
-public interface SysMessageDao extends JpaRepository<SysMessageModel,Long>  {
+public interface SysMessageDao extends JpaRepository<SysMessageModel,Long>,SysMessageDao2 {
 
 }

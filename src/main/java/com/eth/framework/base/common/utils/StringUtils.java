@@ -1137,6 +1137,13 @@ public class StringUtils {
         }
         return "'"+yyyyMMddHHmmss.format(date)+"'";
     }
+    public static String transSqlValue(Date date) {
+        SimpleDateFormat yyyyMMddHHmmss = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        if(date == null) {
+            return null;
+        }
+        return "'"+yyyyMMddHHmmss.format(date)+"'";
+    }
     public static String transSqlValue(Integer value) {
         if(value == null) {
             return null;

@@ -3,6 +3,7 @@ package com.eth.ens.dao.impl;
 import com.eth.ens.dao.EthEnsInfoDao2;
 import com.eth.ens.model.EnsDomainsDTO;
 import com.eth.ens.model.EnsDomainsQO;
+import com.eth.ens.model.EthEnsInfoModel;
 import com.eth.framework.base.common.model.PageParam;
 import com.eth.framework.base.common.utils.PageUtils;
 import com.eth.framework.base.common.utils.StringUtils;
@@ -14,7 +15,11 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.math.BigInteger;
+import java.text.SimpleDateFormat;
 import java.util.List;
+
+import static com.eth.framework.base.common.utils.StringUtils.montageInsertSql;
+import static com.eth.framework.base.common.utils.StringUtils.transSqlValue;
 
 public class EthEnsInfoDaoImpl implements EthEnsInfoDao2 {
     @PersistenceContext
@@ -112,6 +117,7 @@ public class EthEnsInfoDaoImpl implements EthEnsInfoDao2 {
         return new BigInteger(query.getSingleResult().toString()).intValue();
     }
 
+
     private static void listEnsDomainWhere(EnsDomainsQO qo, StringBuilder strSql) {
         if(!StringUtils.isEmpty(qo.getDomain())){
             strSql.append(" and en.domain like concat('%',:domain,'%')");
@@ -148,6 +154,64 @@ public class EthEnsInfoDaoImpl implements EthEnsInfoDao2 {
         }
         if(!StringUtils.isEmpty(qo.getHas_invisibles())){
             strSql.append(" and en.has_invisibles = :hasInvisibles");
+        }
+    }
+    @Override
+    public void batchInsertModel(List<EthEnsInfoModel> mList) throws Exception {
+        if(mList != null && !mList.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            String insertSql = "REPLACE INTO `ethereum_ens`.`eth_ens_info`(`token_id`, `create_date`, `image`, `background_image`, `url`, `character_set`" +
+                    ", `constract_address`, `domain`, `owner`, `last_txn_hash`, `last_txn_time`, `last_txn_fee`, `normailized`, `expiration_date`" +
+                    ", `length`, `letters_only`, `has_numbers`, `has_unicode`, `has_emoji`, `has_invisibles`, `registration_date`, `meta`, `open_sea_price`" +
+                    ", `open_sea_price_updated_time`, `open_sea_price_token`, `open_sea_auction`, `open_sea_auction_type`, `open_sea_listing_date`) VALUES";
+            sb.append(insertSql);
+            int i = 0;
+            SimpleDateFormat yyyyMMddHHmmss = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            for(EthEnsInfoModel m:mList){
+                sb.append(montageInsertSql(
+                        transSqlValue(m.getTokenId())
+                        ,transSqlValue(m.getCreateDate(), yyyyMMddHHmmss)
+                        ,transSqlValue(m.getImage())
+                        ,transSqlValue(m.getBackgroundImage())
+                        ,transSqlValue(m.getUrl())
+                        ,transSqlValue(m.getCharacterSet())
+                        ,transSqlValue(m.getConstractAddress())
+                        ,transSqlValue(m.getDomain())
+                        ,transSqlValue(m.getOwner())
+                        ,transSqlValue(m.getLastTxnHash())
+                        ,transSqlValue(m.getLastTxnTime(), yyyyMMddHHmmss)
+                        ,transSqlValue(m.getLastTxnFee())
+                        ,transSqlValue(m.getNormailized())
+                        ,transSqlValue(m.getExpirationDate(), yyyyMMddHHmmss)
+                        ,transSqlValue(m.getLength())
+                        ,transSqlValue(m.getLettersOnly())
+                        ,transSqlValue(m.getHasNumbers())
+                        ,transSqlValue(m.getHasUnicode())
+                        ,transSqlValue(m.getHasEmoji())
+                        ,transSqlValue(m.getHasInvisibles())
+                        ,transSqlValue(m.getRegistrationDate(), yyyyMMddHHmmss)
+                        ,transSqlValue(m.getMeta())
+                        ,transSqlValue(m.getOpenSeaPrice())
+                        ,transSqlValue(m.getOpenSeaPriceUpdatedTime(), yyyyMMddHHmmss)
+                        ,transSqlValue(m.getOpenSeaPriceToken())
+                        ,transSqlValue(m.getOpenSeaAuction())
+                        ,transSqlValue(m.getOpenSeaAuctionType())
+                        ,transSqlValue(m.getOpenSeaListingDate(), yyyyMMddHHmmss)
+                ) + "\n,");
+                i++;
+                if(i == 1000) {
+                    sb.deleteCharAt(sb.length() - 1);
+                    Query query = em.createNativeQuery(sb.toString());
+                    int count = query.executeUpdate();
+                    sb = new StringBuilder(insertSql);
+                    i = 0;
+                }
+            }
+            if(i > 0) {
+                sb.deleteCharAt(sb.length() - 1);
+                Query query = em.createNativeQuery(sb.toString());
+                int count = query.executeUpdate();
+            }
         }
     }
 }

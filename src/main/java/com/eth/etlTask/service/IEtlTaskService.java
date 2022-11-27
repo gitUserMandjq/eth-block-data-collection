@@ -1,5 +1,6 @@
 package com.eth.etlTask.service;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 
@@ -36,17 +37,23 @@ public interface IEtlTaskService {
      */
     void etlEns(Long blockNumber, Integer retry);
     /**
-     * 解析某一高度的区块链数据
+     * 解析某一高度的ens数据
      * @param blockNumber
      * @throws Exception
      */
-    void etlEns(Long blockNumber, Integer retry, CountDownLatch latch);
+    void etlEns(List<Long> blockNumber, Integer retry);
     /**
      * 解析某一高度的区块链数据
      * @param blockNumber
      * @throws Exception
      */
-    void etlEns(Long blockNumber, Integer retry, CountDownLatch latch, Semaphore lock);
+    void etlEns(List<Long> blockNumber, Integer retry, CountDownLatch latch);
+    /**
+     * 解析某一高度的区块链数据
+     * @param blockNumber
+     * @throws Exception
+     */
+    void etlEns(List<Long> blockNumber, Integer retry, CountDownLatch latch, Semaphore lock);
     /**
      * 解析某一高度的区块链数据
      * @param startBlockNumber

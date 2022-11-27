@@ -378,7 +378,7 @@ public class AlchemyUtils {
      * "type":"0x0"}]}}
      * @throws IOException
      */
-    public static String alchemygetTransactionReceipts(Long blockNumber) throws Exception {
+    public static String alchemygetTransactionReceipts(List<Long> blockNumber) throws Exception {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         //内容较长
         builder.connectTimeout(5, TimeUnit.MINUTES)
@@ -391,16 +391,18 @@ public class AlchemyUtils {
         {
             String body = null;
             Date beginTime = new Date();
-            String data = "{" +
-                    "\"id\": "+blockNumber+"," +
-                    "\"jsonrpc\": \"2.0\"," +
-                    "\"method\": \"alchemy_getTransactionReceipts\"," +
-                    "\"params\": [" +
-                    "{" +
-                    "\"blockNumber\": \"0x"+Long.toHexString(blockNumber)+"\"" +
-                    "}" +
-                    "]" +
-                    "}";
+            Map<String, Object> paraData = new HashMap<>();
+            paraData.put("id", blockNumber.get(0));
+            paraData.put("jsonrpc","2.0");
+            paraData.put("method","alchemy_getTransactionReceipts");
+            List<Map<String, String>> blockNumberList = new ArrayList<>();
+            paraData.put("params", blockNumberList);
+            for(Long n:blockNumber){
+                Map<String, String> m = new HashMap<>();
+                m.put("blockNumber","0x"+Long.toHexString(n));
+                blockNumberList.add(m);
+            }
+            String data = JsonUtil.object2String(paraData);
             String url = getAlchemyPath();
             log.info("url:" + url);
             log.info("data:" + data);

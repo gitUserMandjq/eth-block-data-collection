@@ -73,7 +73,7 @@ public class EthTaskServiceImpl implements IEtlTaskService {
                 HashMap<String, EthTxnModel> transactionEnsMap = new HashMap<>();
                 HashMap<String, EthEnsDTO> ensMap = new HashMap<>();
                 //获取交易回执，交易回执返回的顺序其实和交易的顺序一致
-                String body = AlchemyUtils.alchemygetTransactionReceipts(blockNumber);
+                String body = AlchemyUtils.alchemygetTransactionReceipts(Arrays.asList(blockNumber));
                 Map<String, Object> resultMap = JsonUtil.string2Obj(body);
                 Map result = (Map) resultMap.get("result");
                 if(result.containsKey("receipts")){
@@ -201,6 +201,15 @@ public class EthTaskServiceImpl implements IEtlTaskService {
      */
     @Override
     public void etlEns(Long blockNumber, Integer retry) {
+        etlEns(Arrays.asList(blockNumber), retry);
+    }
+    /**
+     * 解析某一高度的区块链数据
+     * @param blockNumber
+     * @throws Exception
+     */
+    @Override
+    public void etlEns(List<Long> blockNumber, Integer retry) {
         Date beginTime = new Date();
         try {
             {
@@ -252,19 +261,21 @@ public class EthTaskServiceImpl implements IEtlTaskService {
                 }
                 Map<String, Map> metaMap = getMetaMap(tokenIds);
                 Iterator<Map.Entry<String, EthEnsDTO>> iterator = ensMap.entrySet().iterator();
+                List<EthEnsDTO> valueList = new ArrayList<>();
                 while(iterator.hasNext()){
                     Map.Entry<String, EthEnsDTO> next = iterator.next();
                     EthEnsDTO value = next.getValue();
                     Map map = metaMap.get(value.getTokenId());
                     value.setMeta(map);
-                    ethEnsInfoService.insertOrUpdateEns(value);
+                    valueList.add(value);
                 }
+                ethEnsInfoService.batchInsertOrUpdateEns(valueList);
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             if(retry < 3){//重试三次
                 retry ++;
-                etlEthBlock(blockNumber, retry);
+                etlEns(blockNumber, retry);
                 return;
             }else{
                 sysErrorMessageService.addSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK, e.getMessage(), blockNumber);
@@ -276,7 +287,6 @@ public class EthTaskServiceImpl implements IEtlTaskService {
             sysMessageService.addSysMessage(SysMessageModel.TYPE_ETHTASK, message, blockNumber, costTime);
         }
     }
-
     private static Map<String, Map> getMetaMap(Set<String> tokenIds) throws IOException {
         if(tokenIds.isEmpty()){
             return new HashMap<>();
@@ -297,7 +307,7 @@ public class EthTaskServiceImpl implements IEtlTaskService {
      * @throws Exception
      */
     @Override
-    public void etlEns(Long blockNumber, Integer retry, CountDownLatch latch){
+    public void etlEns(List<Long> blockNumber, Integer retry, CountDownLatch latch){
         threadPool.submit(()->{
             etlEns(blockNumber, retry);
             latch.countDown();
@@ -309,15 +319,17 @@ public class EthTaskServiceImpl implements IEtlTaskService {
      * @throws Exception
      */
     @Override
-    public void etlEns(Long blockNumber, Integer retry, CountDownLatch latch, Semaphore lock){
+    public void etlEns(List<Long> blockNumber, Integer retry, CountDownLatch latch, Semaphore lock){
         try {
-            lock.acquire();
+            lock.acquire();//这个锁是为了保证线程池的等待队列限制在一定规模，避免无限扩大
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         threadPool.submit(()->{
             etlEns(blockNumber, retry);
-            latch.countDown();
+            for(int i=0;i< blockNumber.size();i++){
+                latch.countDown();
+            }
             lock.release();
         });
     }

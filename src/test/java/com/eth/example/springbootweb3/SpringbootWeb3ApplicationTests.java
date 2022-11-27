@@ -9,7 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 
@@ -40,9 +42,18 @@ class SpringbootWeb3ApplicationTests {
     CountDownLatch latch = new CountDownLatch((int)(high - start + 1));
     Semaphore lock = new Semaphore(20);
     Date startTime = new Date();
-    for(long i = start; i<= high; i++){
-//      etlTaskService.etlEns(i, 0, latch, lock);
-      etlTaskService.etlEthBlock(i, 0, latch, lock);
+    for(long i = start; i<= high; i = i+10){
+      long begin = i;
+      long end = i+9;
+      if(end > high){
+        end = high;
+      }
+      List<Long> blockNumber = new ArrayList<>();
+      for(long j=begin;j<=end;j++){
+        blockNumber.add(j);
+      }
+      etlTaskService.etlEns(blockNumber, 0, latch, lock);
+//      etlTaskService.etlEthBlock(i, 0, latch, lock);
       System.out.println("allTime"+i+":"+(new Date().getTime() - startTime.getTime()));
     }
     latch.await();

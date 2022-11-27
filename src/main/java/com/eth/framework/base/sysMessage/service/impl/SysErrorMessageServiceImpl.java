@@ -35,6 +35,20 @@ public class SysErrorMessageServiceImpl implements ISysErrorMessageService {
         return model;
     }
     /**
+     * 新增错误日志
+     * @param type
+     * @param message
+     * @param blockNumber
+     * @return
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void addSysErrorMessage(String type, String message, List<Long> blockNumber) {
+        for(Long bn:blockNumber){
+            addSysErrorMessage(type,message,bn);
+        }
+    }
+    /**
      * 查询未处理的错误日志
      * @param type
      * @return
