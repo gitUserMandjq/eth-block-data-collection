@@ -351,10 +351,18 @@ public class EthTaskServiceImpl implements IEtlTaskService {
      */
     @Override
     public void dealErrorEth() throws Exception {
-        List<SysErrorMessageModel> errorList = sysErrorMessageService.listNotDealSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK, 500);
+        List<SysErrorMessageModel> errorList = sysErrorMessageService.listNotDealSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK, 5000);
         CountDownLatch latch = new CountDownLatch((int)(errorList.size()));
+        List<Long> blockIds = new ArrayList<>();
         for(SysErrorMessageModel error:errorList){
-            etlEthBlock(error.getBlockNumber(), 0, latch);
+            blockIds.add(error.getBlockNumber());
+            if(blockIds.size() >= 10){
+                etlEns(blockIds, 0, latch);
+                blockIds = new ArrayList<>();
+            }
+        }
+        if(!blockIds.isEmpty()){
+            etlEns(blockIds, 0, latch);
         }
         latch.await();
         List<Long> ids = errorList.stream().map(SysErrorMessageModel::getId).collect(Collectors.toList());

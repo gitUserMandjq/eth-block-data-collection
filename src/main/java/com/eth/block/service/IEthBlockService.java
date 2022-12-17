@@ -5,6 +5,7 @@ import com.eth.block.model.EthBlockUncleModel;
 import org.web3j.protocol.core.methods.response.EthBlock;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 public interface IEthBlockService {
     /**
@@ -29,4 +30,10 @@ public interface IEthBlockService {
      * @throws Exception
      */
     EthBlockUncleModel insertOrUpdateEthBlockUncle(String uncleHash, Long blockNumber)throws Exception;
+
+    /**
+     * 获取当前区块高度
+     * @return
+     */
+    BigInteger getCurrentBlockNumber() throws IOException;
 }

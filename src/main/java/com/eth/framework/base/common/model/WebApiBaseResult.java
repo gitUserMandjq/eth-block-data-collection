@@ -51,6 +51,10 @@ public class WebApiBaseResult {
         result.setStatusCode(COMMONERROR);
         return result;
     }
+    public static WebApiBaseResult success() {
+        WebApiBaseResult result = new WebApiBaseResult();
+        return result;
+    }
 
 
     //新加总线的id

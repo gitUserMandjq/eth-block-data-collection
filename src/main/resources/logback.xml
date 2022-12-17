@@ -4,7 +4,8 @@
     <!-- 日志级别 -->
     <property name="logLevel" value="INFO"></property>
     <!-- 日志地址 -->
-    <property name="logPath" value="D://logs"></property>
+    <!--<property name="logPath" value="D://logs"></property>-->
+    <property name="logPath" value="/opt/logs/eth-block-data-collection"></property>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>

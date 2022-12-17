@@ -65,4 +65,13 @@ public class SysMessageService implements ISysMessageService {
             log.error(e.getMessage(), e);
         }
     }
+    /**
+     * 获取某个消息的最大处理值
+     * @param type
+     * @return
+     */
+    @Override
+    public Long getMaxBlockNumber(String type) {
+        return sysMessageDao.getMaxBlockNumber(type);
+    }
 }

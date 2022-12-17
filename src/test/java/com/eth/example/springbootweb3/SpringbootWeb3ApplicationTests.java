@@ -30,21 +30,23 @@ class SpringbootWeb3ApplicationTests {
   void contextLoads() throws Exception {
 //    etlTaskService.etlEthBlock(14669839L, 3);
 //    etlTaskService.etlEns(14669839L, 3);
-//    Long high = 10000000L;
+    Long high = 14000000L;
 //    Long start = 9380422L;
-    Long start = 14669839L;
-    Long high = start + 5000L;
-    dealEtlTask(start, high);
+    Long start = 10000000L;
+//    Long start = 14669839L;
+//    Long high = start + 5000L;
+    Integer batchNumber = 10;
+//    dealEtlTask(start, high, batchNumber);
 //    etlTaskService.dealErrorEth();
   }
 
-  private void dealEtlTask(Long start, Long high) throws InterruptedException {
+  private void dealEtlTask(Long start, Long high, Integer batchNumber) throws InterruptedException {
     CountDownLatch latch = new CountDownLatch((int)(high - start + 1));
     Semaphore lock = new Semaphore(20);
     Date startTime = new Date();
-    for(long i = start; i<= high; i = i+10){
+    for(long i = start; i<= high; i = i+batchNumber){
       long begin = i;
-      long end = i+9;
+      long end = i+batchNumber - 1;
       if(end > high){
         end = high;
       }

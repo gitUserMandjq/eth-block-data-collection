@@ -226,7 +226,7 @@ public class AlchemyUtils {
                     .build();
             try {
                 body = callResponse(client, request);
-                log.info("body:" + body);
+//                log.info("body:" + body);
                 judgeResult(body);
             } catch (Exception e) {
                 log.info("error:"+url);

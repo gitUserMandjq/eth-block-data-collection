@@ -21,4 +21,11 @@ public interface ISysMessageService {
      * @return
      */
     void addSysMessage(String type, String message, List<Long> blockNumber, Long costTime);
+
+    /**
+     * 获取某个消息的最大处理值
+     * @param type
+     * @return
+     */
+    Long getMaxBlockNumber(String type);
 }
