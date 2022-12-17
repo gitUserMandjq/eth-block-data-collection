@@ -27,5 +27,5 @@ public interface ITimerService {
      * 处理错误的任务
      * @throws Exception
      */
-    void dealErrorEthTask() throws Exception;
+    void dealErrorEthTask(Integer errorNum) throws Exception;
 }

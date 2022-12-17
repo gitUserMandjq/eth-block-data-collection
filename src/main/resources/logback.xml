@@ -3,9 +3,11 @@
 
     <!-- 日志级别 -->
     <property name="logLevel" value="INFO"></property>
+    <!-- 最大保存时间 -->
+    <property name="maxHistory" value="10"/>
     <!-- 日志地址 -->
-    <!--<property name="logPath" value="D://logs"></property>-->
-    <property name="logPath" value="/opt/logs/eth-block-data-collection"></property>
+    <property name="logPath" value="D://logs"></property>
+    <!--<property name="logPath" value="/opt/logs/eth-block-data-collection"></property>-->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
@@ -14,10 +16,8 @@
 
     <appender name="FILE_INFO"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>INFO</level>
-            <onMatch>ACCEPT</onMatch>
-            <onMismatch>DENY</onMismatch>
         </filter>
         <file>${logPath}/eth_info.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">

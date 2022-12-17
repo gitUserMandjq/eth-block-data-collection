@@ -16,7 +16,7 @@ public class EnsSchedule {
     /**
      * 分析ens
      */
-    @Scheduled(cron = "*0 0/10 * * * ? ")   //每十分钟执行一次
+    @Scheduled(cron = "0 0/10 * * * ? ")   //每十分钟执行一次
     private void dealEtlTask() {
         log.info("开始执行定时器dealEtlTask");
         try {
@@ -30,11 +30,11 @@ public class EnsSchedule {
     /**
      * 处理报错的任务
      */
-    @Scheduled(cron = "*0 0/10 * * * ? ")   //每十分钟执行一次
+    @Scheduled(cron = "0 0/10 * * * ? ")   //每十分钟执行一次
     private void dealErrorEthTask() {
         log.info("开始执行定时器dealErrorEthTask");
         try {
-            timerService.dealErrorEthTask();
+            timerService.dealErrorEthTask(1000);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }

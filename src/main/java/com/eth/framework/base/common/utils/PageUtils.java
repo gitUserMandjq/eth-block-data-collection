@@ -194,6 +194,27 @@ public class PageUtils {
 		return pageData;
     }
 
+	/**
+	 * 生成通用分页信息
+	 * @param page
+	 * @param size
+	 * @param sidx
+	 * @param sord
+	 * @return
+	 */
+	public static PageParam constructPageParam(Integer page, Integer size, String sidx, String sord) {
+		Sort sort = constructSort(sidx, sord);
+		Integer p = 0;
+		if (page != null){
+			p = page - 1;
+			if (p <= 0){
+				p = 0;
+			}
+		}
+
+		PageParam pageInfo = new PageParam(p, size, 1, sort);
+		return pageInfo;
+	}
     /**
      * 生成通用分页信息
      * @param page

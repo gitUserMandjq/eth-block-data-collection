@@ -6,6 +6,7 @@ import com.eth.etlTask.service.IEtlTaskService;
 import com.eth.framework.base.sysMessage.model.SysErrorMessageModel;
 import com.eth.framework.base.sysMessage.service.ISysMessageService;
 import com.eth.timer.service.ITimerService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -16,6 +17,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 
 @Service
+@Slf4j
 public class TimerServiceImpl implements ITimerService {
     @Resource
     IEtlTaskService etlTaskService;
@@ -62,6 +64,7 @@ public class TimerServiceImpl implements ITimerService {
         if(start > high){
             return;
         }
+        log.info("dealEtlTask：开始处理区块 {} - {} ", start , high);
         CountDownLatch latch = new CountDownLatch((int)(high - start + 1));
         Semaphore lock = new Semaphore(20);
         Date startTime = new Date();
@@ -77,17 +80,17 @@ public class TimerServiceImpl implements ITimerService {
             }
             etlTaskService.etlEns(blockNumber, 0, latch, lock);
 //      etlTaskService.etlEthBlock(i, 0, latch, lock);
-            System.out.println("dealEtlTask：allTime"+i+":"+(new Date().getTime() - startTime.getTime()));
+            log.info("dealEtlTask：处理区块 {} - {} :耗时 {} ms", begin, end, (new Date().getTime() - startTime.getTime()));
         }
         latch.await();
-        System.out.println("dealEtlTask：totalAllTime:"+(new Date().getTime() - startTime.getTime()));
+        log.info("dealEtlTask：处理区块 {} - {} :耗时 {} ms", start, high, (new Date().getTime() - startTime.getTime()));
     }
     /**
      * 处理错误的任务
      * @throws Exception
      */
     @Override
-    public void dealErrorEthTask() throws Exception {
-        etlTaskService.dealErrorEth(5000);
+    public void dealErrorEthTask(Integer errorNum) throws Exception {
+        etlTaskService.dealErrorEth(errorNum);
     }
 }

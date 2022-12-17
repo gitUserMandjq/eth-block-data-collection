@@ -5,6 +5,7 @@ import com.eth.block.dao.EthBlockDao;
 import com.eth.block.service.IEthBlockService;
 import com.eth.ens.dao.EthEnsInfoDao;
 import com.eth.etlTask.service.IEtlTaskService;
+import com.eth.timer.service.ITimerService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -26,6 +27,8 @@ class SpringbootWeb3ApplicationTests {
   IEtlTaskService etlTaskService;
   @Resource
   EthEnsInfoDao ethEnsInfoDao;
+  @Resource
+  ITimerService timerService;
   @Test
   void contextLoads() throws Exception {
 //    etlTaskService.etlEthBlock(14669839L, 3);
@@ -36,6 +39,8 @@ class SpringbootWeb3ApplicationTests {
 //    Long start = 14669839L;
 //    Long high = start + 5000L;
     Integer batchNumber = 10;
+    timerService.dealErrorEthTask(100);
+//    timerService.dealEtlTask(20);
 //    dealEtlTask(start, high, batchNumber);
 //    etlTaskService.dealErrorEth();
   }

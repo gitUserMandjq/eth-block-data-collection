@@ -152,7 +152,10 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
             List<Map> attributes = (List<Map>) metadata.get("attributes");
             for(Map m:attributes){
                 if("Created Date".equals(m.get("trait_type"))){
-                    createDate = new Date((Long) m.get("value"));
+                    Object value = m.get("value");
+                    if(value != null){//创建时间可能为空
+                        createDate = new Date((Long) value);
+                    }
                     continue;
                 }
                 if("Character Set".equals(m.get("trait_type"))){

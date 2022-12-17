@@ -55,7 +55,7 @@ public class SysErrorMessageServiceImpl implements ISysErrorMessageService {
      */
     @Override
     public List<SysErrorMessageModel> listNotDealSysErrorMessage(String type, Integer limit) {
-        PageParam pageInfo = PageUtils.constructPageParam(1, limit);
+        PageParam pageInfo = PageUtils.constructPageParam(1, limit, "createTime", "asc");
         //每次最多处理1000条
         List<SysErrorMessageModel> list = sysErrorMessageDao.findByTypeAndStatus(type, 0, pageInfo);
         return list;

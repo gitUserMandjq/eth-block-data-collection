@@ -304,8 +304,8 @@ public class AlchemyUtils {
      * @throws Exception
      */
     private static void judgeResult(String body) throws Exception {
-        if(body.indexOf("\"error\":") > -1){
-            log.info(body);
+        if(body.startsWith("{") && body.indexOf("\"error\":") > -1){
+            log.info("返回错误信息 {}",body);
             Map<String, Object> resultMap = JsonUtil.string2Obj(body);
             Map<String, Object> error = (Map<String, Object>) resultMap.get("error");
             throw new Exception("炼金术接口报错："+ StringUtils.valueOf(error.get("code")) +StringUtils.valueOf(error.get("message")));

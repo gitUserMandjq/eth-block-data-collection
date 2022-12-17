@@ -310,7 +310,9 @@ public class EthTaskServiceImpl implements IEtlTaskService {
     public void etlEns(List<Long> blockNumber, Integer retry, CountDownLatch latch){
         threadPool.submit(()->{
             etlEns(blockNumber, retry);
-            latch.countDown();
+            for(int i=0;i< blockNumber.size();i++){
+                latch.countDown();
+            }
         });
     }
     /**
@@ -354,8 +356,10 @@ public class EthTaskServiceImpl implements IEtlTaskService {
         List<SysErrorMessageModel> errorList = sysErrorMessageService.listNotDealSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK, errorNum);
         CountDownLatch latch = new CountDownLatch((int)(errorList.size()));
         List<Long> blockIds = new ArrayList<>();
+        List<Long> logIds = new ArrayList<>();
         for(SysErrorMessageModel error:errorList){
             blockIds.add(error.getBlockNumber());
+            logIds.add(error.getId());
             if(blockIds.size() >= 10){
                 etlEns(blockIds, 0, latch);
                 blockIds = new ArrayList<>();
@@ -365,13 +369,7 @@ public class EthTaskServiceImpl implements IEtlTaskService {
             etlEns(blockIds, 0, latch);
         }
         latch.await();
-        List<Long> ids = errorList.stream().map(SysErrorMessageModel::getId).collect(Collectors.toList());
-        sysErrorMessageService.dealSysErrorMessage(ids);
-        if(errorList.size() == 0){
-            return;
-        }else{
-            dealErrorEth(errorNum);
-        }
+        sysErrorMessageService.dealSysErrorMessage(logIds);
     }
 
     private static HashMap<String, EthTxnModel> dealTransactionMap(EthBlock.Block block, EthBlockModel blockModel) {
