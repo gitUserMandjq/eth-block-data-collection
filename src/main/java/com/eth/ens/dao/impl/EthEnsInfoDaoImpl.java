@@ -7,6 +7,7 @@ import com.eth.ens.model.EthEnsInfoModel;
 import com.eth.framework.base.common.model.PageParam;
 import com.eth.framework.base.common.utils.PageUtils;
 import com.eth.framework.base.common.utils.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.query.NativeQuery;
 import org.hibernate.transform.Transformers;
 import org.hibernate.type.StandardBasicTypes;
@@ -20,7 +21,7 @@ import java.util.List;
 
 import static com.eth.framework.base.common.utils.StringUtils.montageInsertSql;
 import static com.eth.framework.base.common.utils.StringUtils.transSqlValue;
-
+@Slf4j
 public class EthEnsInfoDaoImpl implements EthEnsInfoDao2 {
     @PersistenceContext
     private EntityManager em;
@@ -197,7 +198,7 @@ public class EthEnsInfoDaoImpl implements EthEnsInfoDao2 {
                         ,transSqlValue(m.getOpenSeaAuction())
                         ,transSqlValue(m.getOpenSeaAuctionType())
                         ,transSqlValue(m.getOpenSeaListingDate(), yyyyMMddHHmmss)
-                ) + "\n,");
+                ) + ",\n");
                 i++;
                 if(i == 1000) {
                     sb.deleteCharAt(sb.length() - 1);

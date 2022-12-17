@@ -39,7 +39,9 @@ class SpringbootWeb3ApplicationTests {
 //    Long start = 14669839L;
 //    Long high = start + 5000L;
     Integer batchNumber = 10;
-    timerService.dealErrorEthTask(100);
+    for(int i=0;i<1;i++){
+      timerService.dealErrorEthTask(1);
+    }
 //    timerService.dealEtlTask(20);
 //    dealEtlTask(start, high, batchNumber);
 //    etlTaskService.dealErrorEth();

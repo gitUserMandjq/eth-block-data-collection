@@ -34,7 +34,9 @@ public class EnsSchedule {
     private void dealErrorEthTask() {
         log.info("开始执行定时器dealErrorEthTask");
         try {
-            timerService.dealErrorEthTask(1000);
+            for(int i=0;i<5;i++){
+                timerService.dealErrorEthTask(100);
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }

@@ -282,11 +282,12 @@ public class EthTaskServiceImpl implements IEtlTaskService {
             }
         } finally {
             Long costTime = new Date().getTime() - beginTime.getTime();
-            String message = "etlEthBlock消耗时间:"+(costTime+"ms");
+            String message = "etlEthBlock"+blockNumber.toString()+"消耗时间:"+(costTime+"ms");
             log.info(message);
             sysMessageService.addSysMessage(SysMessageModel.TYPE_ETHTASK, message, blockNumber, costTime);
         }
     }
+
     private static Map<String, Map> getMetaMap(Set<String> tokenIds) throws IOException {
         if(tokenIds.isEmpty()){
             return new HashMap<>();
@@ -386,6 +387,8 @@ public class EthTaskServiceImpl implements IEtlTaskService {
     }
 
     public static void main(String[] args) {
-        long l = 9999978301729250L;
+        List<Long> ids = new ArrayList<>();
+        ids.add(1L);
+        System.out.println(ids.toString());
     }
 }
