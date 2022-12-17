@@ -82,4 +82,12 @@ public class TimerServiceImpl implements ITimerService {
         latch.await();
         System.out.println("dealEtlTask：totalAllTime:"+(new Date().getTime() - startTime.getTime()));
     }
+    /**
+     * 处理错误的任务
+     * @throws Exception
+     */
+    @Override
+    public void dealErrorEthTask() throws Exception {
+        etlTaskService.dealErrorEth(5000);
+    }
 }

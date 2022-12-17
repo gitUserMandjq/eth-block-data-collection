@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
@@ -20,8 +21,22 @@ public class AlchemyUtils {
     public static String ETH_HOST_STR = "J4ipt__b_exS1cez4CO9KhRkXEYWxUcJ,UdxThvKeKc9FbOwZZPtiWdjWs-_ex_pN,ml7esjvnZ2twDU8WenOz0U2c1iRXOyS5,K_oaFqRcqOsrpEgvdnm8RZN5-pqq04zQ,1dnGPiAwFzE35GHLaqXT1cLJtQAGjjGG,80tBHWkwsdPpnNVeDzFaIsf385mCDZuS,LRvE9ITS5Eg1w6Cngm3K8GpMAf8Tun1_";
     public static String[] ETH_HOST;
     public static final String ENSCONSTRACTADDRESS = "0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85";//ENS的交换合约
+    public static String isProxy = "0";
     static {
-        ETH_HOST = ETH_HOST_STR.split(",");
+        try {
+            InputStreamReader is = new InputStreamReader(
+                    AlchemyUtils.class.getClassLoader().getResourceAsStream("application.properties"),
+                    "utf-8");
+            Properties property = new Properties();
+            property.load(is);
+            HOST = PropertiesUtils.readValue(property, "alchemy.server.host");
+            ETH_HOST_STR = PropertiesUtils.readValue(property, "alchemy.server.apptokens");
+            isProxy = PropertiesUtils.readValue(property, "alchemy.server.isProxy");
+            ETH_HOST = ETH_HOST_STR.split(",");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -331,8 +346,10 @@ public class AlchemyUtils {
     public static String getNFTMetadataByRaw(String raw) throws IOException{
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         // 设置代理地址
-        SocketAddress sa = new InetSocketAddress("127.0.0.1", 53998);
-        builder.proxy(new Proxy(Proxy.Type.HTTP, sa));
+        if("1".equals(isProxy)){
+            SocketAddress sa = new InetSocketAddress("127.0.0.1", 53998);
+            builder.proxy(new Proxy(Proxy.Type.HTTP, sa));
+        }
         OkHttpClient client = builder.build();
         {
             String body = null;

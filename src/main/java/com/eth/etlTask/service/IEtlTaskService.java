@@ -66,5 +66,5 @@ public interface IEtlTaskService {
      * 处理异常区块链数据
      * @throws Exception
      */
-    void dealErrorEth()throws Exception;
+    void dealErrorEth(Integer errorNum)throws Exception;
 }

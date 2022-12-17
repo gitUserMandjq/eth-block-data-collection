@@ -12,6 +12,10 @@ import javax.annotation.Resource;
 public class EnsSchedule {
     @Resource
     ITimerService timerService;
+
+    /**
+     * 分析ens
+     */
     @Scheduled(cron = "*0 0/10 * * * ? ")   //每十分钟执行一次
     private void dealEtlTask() {
         log.info("开始执行定时器dealEtlTask");
@@ -21,5 +25,19 @@ public class EnsSchedule {
             log.error(e.getMessage(), e);
         }
         log.info("结束执行定时器dealEtlTask");
+    }
+
+    /**
+     * 处理报错的任务
+     */
+    @Scheduled(cron = "*0 0/10 * * * ? ")   //每十分钟执行一次
+    private void dealErrorEthTask() {
+        log.info("开始执行定时器dealErrorEthTask");
+        try {
+            timerService.dealErrorEthTask();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+        log.info("结束执行定时器dealErrorEthTask");
     }
 }

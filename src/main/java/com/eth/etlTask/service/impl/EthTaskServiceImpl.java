@@ -350,8 +350,8 @@ public class EthTaskServiceImpl implements IEtlTaskService {
      * @throws Exception
      */
     @Override
-    public void dealErrorEth() throws Exception {
-        List<SysErrorMessageModel> errorList = sysErrorMessageService.listNotDealSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK, 5000);
+    public void dealErrorEth(Integer errorNum) throws Exception {
+        List<SysErrorMessageModel> errorList = sysErrorMessageService.listNotDealSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK, errorNum);
         CountDownLatch latch = new CountDownLatch((int)(errorList.size()));
         List<Long> blockIds = new ArrayList<>();
         for(SysErrorMessageModel error:errorList){
@@ -370,7 +370,7 @@ public class EthTaskServiceImpl implements IEtlTaskService {
         if(errorList.size() == 0){
             return;
         }else{
-            dealErrorEth();
+            dealErrorEth(errorNum);
         }
     }
 

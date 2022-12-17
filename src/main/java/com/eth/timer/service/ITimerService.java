@@ -22,4 +22,10 @@ public interface ITimerService {
      * @throws Exception
      */
     void dealEtlTask(Long start, Long high, Integer batchNumber)throws Exception;
+
+    /**
+     * 处理错误的任务
+     * @throws Exception
+     */
+    void dealErrorEthTask() throws Exception;
 }
