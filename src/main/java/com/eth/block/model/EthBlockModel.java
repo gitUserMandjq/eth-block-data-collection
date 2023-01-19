@@ -1,6 +1,6 @@
 package com.eth.block.model;
 
-import com.eth.framework.base.utils.StringUtils;
+import com.eth.framework.base.common.utils.StringUtils;
 import lombok.Data;
 import org.web3j.protocol.core.methods.response.EthBlock;
 
@@ -34,7 +34,6 @@ public class EthBlockModel {
     @Column(updatable = false)
     private Date createdAt;//系统时间
     private Date updatedAt;//系统时间
-
     public EthBlockModel(EthBlock.Block block) {
         this.id = block.getNumber().longValue();
         this.blockNumber = block.getNumber().longValue();

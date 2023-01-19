@@ -1,19 +1,17 @@
 package com.eth.transaction.dao.impl;
 
-import com.eth.framework.base.utils.StringUtils;
-import static com.eth.framework.base.utils.StringUtils.*;
-import static com.eth.framework.base.utils.StringUtils.transSqlValue;
-
 import com.eth.transaction.dao.EthTxnDao2;
-import com.eth.transaction.model.EthTxnEnsModel;
 import com.eth.transaction.model.EthTxnModel;
-import org.thymeleaf.util.DateUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Iterator;
+import java.util.Map;
+
+import static com.eth.framework.base.common.utils.StringUtils.montageInsertSql;
+import static com.eth.framework.base.common.utils.StringUtils.transSqlValue;
 
 
 public class EthTxnDaoImpl implements EthTxnDao2 {
@@ -24,7 +22,7 @@ public class EthTxnDaoImpl implements EthTxnDao2 {
         if(mMap != null && !mMap.isEmpty()) {
             SimpleDateFormat yyyyMMddHHmmss = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             StringBuilder sb = new StringBuilder();
-            sb.append("INSERT Ignore INTO `ethereum`.`eth_txns`(`txn_hash`, `block_number`, `txn_index`" +
+            sb.append("INSERT Ignore INTO `eth_txns`(`txn_hash`, `block_number`, `txn_index`" +
                     ", `from_address`, `to_address`, `eth_value`, `gas_used`, `gas_price`, `gas_fee`, `status`, `nonce`" +
                     ", `timestamp`, `contract_address`, `cumulative_gas_used`, `effective_gas_price`, `input`, `max_fee_per_gas`" +
                     ", `max_priority_fee_per_gas`, `is_error`, `err_msg`, `method_id`, `type`, `logs_num`, `created_at`, `updated_at`) VALUES");
@@ -64,7 +62,7 @@ public class EthTxnDaoImpl implements EthTxnDao2 {
                     sb.deleteCharAt(sb.length() - 1);
                     Query query = em.createNativeQuery(sb.toString());
                     int count = query.executeUpdate();
-                    sb = new StringBuilder("INSERT Ignore INTO `ethereum`.`eth_txns`(`txn_hash`, `block_number`, `txn_index`" +
+                    sb = new StringBuilder("INSERT Ignore INTO `eth_txns`(`txn_hash`, `block_number`, `txn_index`" +
                             ", `from_address`, `to_address`, `eth_value`, `gas_used`, `gas_price`, `gas_fee`, `status`, `nonce`, `timestamp`" +
                             ", `contract_address`, `cumulative_gas_used`, `effective_gas_price`, `input`, `max_fee_per_gas`, `max_priority_fee_per_gas`" +
                             ", `is_error`, `err_msg`, `method_id`, `type`, `logs_num`, `created_at`, `updated_at`) VALUES");
@@ -83,7 +81,7 @@ public class EthTxnDaoImpl implements EthTxnDao2 {
         if(mMap != null && !mMap.isEmpty()) {
             SimpleDateFormat yyyyMMddHHmmss = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             StringBuilder sb = new StringBuilder();
-            sb.append("INSERT Ignore INTO `ethereum`.`eth_txns_ens`(`txn_hash`, `block_number`, `txn_index`" +
+            sb.append("INSERT Ignore INTO `eth_txns_ens`(`txn_hash`, `block_number`, `txn_index`" +
                     ", `from_address`, `to_address`, `eth_value`, `gas_used`, `gas_price`, `gas_fee`, `status`, `nonce`" +
                     ", `timestamp`, `contract_address`, `cumulative_gas_used`, `effective_gas_price`, `input`, `max_fee_per_gas`" +
                     ", `max_priority_fee_per_gas`, `is_error`, `err_msg`, `method_id`, `type`, `logs_num`, `created_at`, `updated_at`) VALUES");
@@ -123,7 +121,7 @@ public class EthTxnDaoImpl implements EthTxnDao2 {
                     sb.deleteCharAt(sb.length() - 1);
                     Query query = em.createNativeQuery(sb.toString());
                     int count = query.executeUpdate();
-                    sb = new StringBuilder("INSERT Ignore INTO `ethereum`.`eth_txns_ens`(`txn_hash`, `block_number`, `txn_index`" +
+                    sb = new StringBuilder("INSERT Ignore INTO `eth_txns_ens`(`txn_hash`, `block_number`, `txn_index`" +
                             ", `from_address`, `to_address`, `eth_value`, `gas_used`, `gas_price`, `gas_fee`, `status`, `nonce`, `timestamp`" +
                             ", `contract_address`, `cumulative_gas_used`, `effective_gas_price`, `input`, `max_fee_per_gas`, `max_priority_fee_per_gas`" +
                             ", `is_error`, `err_msg`, `method_id`, `type`, `logs_num`, `created_at`, `updated_at`) VALUES");

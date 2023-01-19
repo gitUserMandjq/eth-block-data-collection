@@ -1,4 +1,4 @@
-package com.eth.framework.base.utils;
+package com.eth.framework.base.common.utils;
 
 import cn.hutool.core.util.CharUtil;
 import org.slf4j.Logger;
@@ -1132,6 +1132,13 @@ public class StringUtils {
         return "'"+value+"'";
     }
     public static String transSqlValue(Date date, SimpleDateFormat yyyyMMddHHmmss) {
+        if(date == null) {
+            return null;
+        }
+        return "'"+yyyyMMddHHmmss.format(date)+"'";
+    }
+    public static String transSqlValue(Date date) {
+        SimpleDateFormat yyyyMMddHHmmss = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         if(date == null) {
             return null;
         }

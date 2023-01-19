@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.core.methods.response.EthBlockNumber;
 
 import javax.annotation.Resource;
 import java.io.IOException;
@@ -59,6 +61,15 @@ public class EthBlockServiceImpl implements IEthBlockService {
         EthBlockUncleModel model = new EthBlockUncleModel(uncleHash, blockNumber);
         ethBlockUncleDao.save(model);
         return model;
+    }
+    /**
+     * 获取当前区块高度
+     * @return
+     */
+    @Override
+    public BigInteger getCurrentBlockNumber() throws IOException {
+        Request<?, EthBlockNumber> request = web3j.ethBlockNumber();
+        return request.send().getBlockNumber();
     }
 
 }

@@ -1,6 +1,4 @@
-package com.eth.framework.base.utils;
-
-import java.util.Map;
+package com.eth.framework.base.common.utils;
 
 /**
  * Twitter_Snowflake<br>

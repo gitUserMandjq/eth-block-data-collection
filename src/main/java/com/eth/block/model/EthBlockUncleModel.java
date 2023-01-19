@@ -1,8 +1,6 @@
 package com.eth.block.model;
 
-import com.eth.framework.base.utils.StringUtils;
 import lombok.Data;
-import org.web3j.protocol.core.methods.response.EthBlock;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
