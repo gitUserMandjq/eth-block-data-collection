@@ -32,7 +32,7 @@ public class EthEnsTaskTimerAction {
             , @RequestParam(value = "start", required = false) Long start
             , @RequestParam(value = "high", required = false) Long high
             , @RequestParam(value = "batchNumer", required = false) Integer batchNumer) throws Exception {
-        timerService.dealEtlTask(start, high, batchNumer);
+        timerService.dealEtlEnsTask(start, high, batchNumer);
         return WebApiBaseResult.success();
     }
 }

@@ -6,6 +6,7 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.List;
 
 public interface IEthBlockService {
     /**
@@ -14,6 +15,12 @@ public interface IEthBlockService {
      * @return
      */
     EthBlock.Block getEthBlock(Long blockNumer) throws IOException;
+    /**
+     * 查询某个高度的区块
+     * @param blockNumerList
+     * @return
+     */
+    List<EthBlock.Block> getEthBlock(Iterable<Long> blockNumerList) throws Exception;
 
     /**
      * 新增或者更新区块链

@@ -1,9 +1,7 @@
 package com.eth.framework.base.common.utils;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.DateUtil;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,5 +115,46 @@ public class ExcelUtils {
         response.setHeader("Content-Disposition", "Attachment;Filename=" + fileName + ".xlsx");
         wb.write(os);
         os.close();
+    }
+    public static void addColumn(Row row, int i, String val) throws ParseException {
+        short lastCellNum = row.getLastCellNum();
+        if(lastCellNum < i + 1){
+            Cell cell = row.createCell(i);
+            cell.setCellValue(val);
+        }else{
+            row.createCell(lastCellNum);
+            for(int j = lastCellNum - 1;j >= i;j--){
+                Cell cellLeft = row.getCell(j);
+                Cell cellRight = row.getCell(j + 1);
+                cellRight.setCellValue(getCellFormatValue(cellLeft));
+                cellRight.setCellType(cellLeft.getCellType());
+            }
+            Cell cell = row.getCell(i);
+            cell.setCellValue(val);
+        }
+    }
+
+    public static void main(String[] args) throws ParseException {
+        Workbook wb = new HSSFWorkbook();
+        Sheet sheet = wb.createSheet();
+        Row row = sheet.createRow(0);
+        {
+            Cell cell = row.createCell(0);
+            cell.setCellValue("1");
+        }
+        {
+            Cell cell = row.createCell(1);
+            cell.setCellValue("2");
+        }
+        {
+            Cell cell = row.createCell(2);
+            cell.setCellValue("3");
+        }
+        addColumn(row, 1, "aa");
+        short lastCellNum = row.getLastCellNum();
+        System.out.println(lastCellNum);
+        for(int i=0;i<lastCellNum;i++){
+            System.out.println(row.getCell(i).getStringCellValue());
+        }
     }
 }

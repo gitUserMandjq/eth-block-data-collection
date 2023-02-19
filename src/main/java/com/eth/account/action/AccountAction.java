@@ -7,6 +7,7 @@ import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -20,8 +21,8 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.ByteArrayOutputStream;
+import java.util.*;
 
 @RestController
 @RequestMapping("/eth/account")
@@ -41,24 +42,50 @@ public class AccountAction {
         Sheet sheet = wb.getSheetAt(0);
         //获取最大行数
         int rownum = sheet.getPhysicalNumberOfRows();
+        List<String> addresses = new ArrayList<>();
+        for (int i = 0; i < rownum; i++) {
+            Row row = sheet.getRow(i);
+            Cell adressCell = row.getCell(0);
+            String address = ExcelUtils.getCellFormatValue(adressCell);
+            //地址\x替换成0x
+            address = address.replace("\\x","0x");
+            addresses.add(address);
+        }
+        List<String> accountCodeList = accountService.getAccountCode(addresses);
         List<AccountType> accountTypeList = new ArrayList<>();
-        for (int i = 1; i < rownum; i++) {
-            Row lastRow = sheet.getRow(i);
-            String address = ExcelUtils.getCellFormatValue(lastRow.getCell(0));
+        for (int i = 0; i < rownum; i++) {
+            Row row = sheet.getRow(i);
+            Cell adressCell = row.getCell(0);
+            String address = addresses.get(i);
+//            String address = ExcelUtils.getCellFormatValue(adressCell);
+//            //地址\x替换成0x
+//            address = address.replace("\\x","0x");
+            adressCell.setCellValue(address);
             AccountType accountType = new AccountType();
             accountType.setAddress(address);
-            String accountCode = accountService.getAccountCode(address);
+            String accountCode = accountCodeList.get(i);
+//            String accountCode = accountService.getAccountCode(address);
             accountTypeList.add(accountType);
             if("0x".equals(accountCode)){
                 accountType.setType("外部账户");
             }else{
                 accountType.setType("合约账户");
             }
+            //在第二列插入地址类型
+            ExcelUtils.addColumn(row, 1, accountType.getType());
         }
-//        String fileName = "账户类型解析";
+        String fileName = "账户类型解析";
         //导出excel文件
 //        ExcelUtils.exportExcel(request, response, getAccountTypeExcel(accountTypeList), fileName);
-        result.setData(accountTypeList);
+//        wb.write();
+        ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
+        wb.write(byteArray);
+        String base64 = Base64.getEncoder().encodeToString(byteArray.toByteArray());
+        Map<String, Object> map = new HashMap<>();
+        map.put("base64", base64);
+        map.put("fileName", fileName);
+        map.put("accountTypeList",accountTypeList);
+        result.setData(map);
         return result;
     }
 

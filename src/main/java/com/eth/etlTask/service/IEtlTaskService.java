@@ -10,26 +10,26 @@ public interface IEtlTaskService {
      * @param blockNumber
      * @throws Exception
      */
-    void etlEthBlock(Long blockNumber, Integer retry);
+    void etlCommonBlock(List<Long> blockNumber, Integer retry);
     /**
      * 解析某一高度的区块链数据
      * @param blockNumber
      * @throws Exception
      */
-    void etlEthBlock(Long blockNumber, Integer retry, CountDownLatch latch);
+    void etlCommonBlock(List<Long> blockNumber, Integer retry, CountDownLatch latch);
     /**
      * 解析某一高度的区块链数据
      * @param blockNumber
      * @throws Exception
      */
-    void etlEthBlock(Long blockNumber, Integer retry, CountDownLatch latch, Semaphore lock);
+    void etlCommonBlock(List<Long> blockNumber, Integer retry, CountDownLatch latch, Semaphore lock);
     /**
      * 解析某一高度的区块链数据
      * @param startBlockNumber
      * @param endBlockNumber
      * @throws Exception
      */
-    void etlEthBlock(Long startBlockNumber, Long endBlockNumber)throws Exception;
+    void etlCommonBlock(Long startBlockNumber, Long endBlockNumber)throws Exception;
     /**
      * 解析某一高度的ens数据
      * @param blockNumber

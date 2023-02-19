@@ -27,9 +27,9 @@ public class TimerServiceImpl implements ITimerService {
     IEthBlockService ethBlockService;
 
     @Override
-    public void dealEtlTask(Long high, Integer batchNumber) throws Exception {
+    public void dealEtlEnsTask(Long high, Integer batchNumber) throws Exception {
         Long start = getStartBlockNumber();
-        dealEtlTask(start, high, batchNumber);
+        dealEtlEnsTask(start, high, batchNumber);
     }
 
     private Long getStartBlockNumber() {
@@ -43,13 +43,13 @@ public class TimerServiceImpl implements ITimerService {
     }
 
     @Override
-    public void dealEtlTask(Integer batchNumber) throws Exception {
+    public void dealEtlEnsTask(Integer batchNumber) throws Exception {
         Long start = getStartBlockNumber();
         Long end = ethBlockService.getCurrentBlockNumber().longValue();
         if(end - start > 10000){//一次最多处理1W条，大约5分钟
             end = start + 10000;
         }
-        dealEtlTask(start, end, batchNumber);
+        dealEtlEnsTask(start, end, batchNumber);
     }
 
     /**
@@ -60,7 +60,7 @@ public class TimerServiceImpl implements ITimerService {
      * @throws Exception
      */
     @Override
-    public void dealEtlTask(Long start, Long high, Integer batchNumber) throws Exception {
+    public void dealEtlEnsTask(Long start, Long high, Integer batchNumber) throws Exception {
         if(start > high){
             return;
         }

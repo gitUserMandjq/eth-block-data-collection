@@ -2,10 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>解析地址类型-第二版</title>
     <script src="js/jquery-1.10.2.min.js?v=1.0.2"></script>
     <script src="js/ajaxFileUpload.js"></script>
-    <script src="js/ajaxFileUpload.js"></script>
+    <link href="layui/css/layui.css" rel="stylesheet"></script>
+
+    <!-- 引入 layui.js -->
+    <script src="layui/layui.js"></script>
     <style>
         table.commonTable td {
             /* border: 1px solid #dddddd; */
@@ -24,14 +27,22 @@
     <form id="form1" action="" method="post" enctype="multipart/form-data" style=" border: 1px solid #dddddd; border-bottom: none;">
     <input id="file1" type="file" name="file" accept=".xls,.xlsx"/>
 
-        <input id="button1" style="height: 32px; background: #ffffff; width: 64px;border: 1px solid #dddddd;margin: 0 4px; border-radius: 1px;" type="button" class="btnSearch" value="上传" />
+        <input id="uploadExcel" style="height: 32px; background: #ffffff; width: 64px;border: 1px solid #dddddd;margin: 0 4px; border-radius: 1px;" type="button" class="btnSearch" value="上传" />
+        <input id="exportExcel" style="height: 32px; background: #ffffff; width: 64px;border: 1px solid #dddddd;margin: 0 4px; border-radius: 1px;" type="button" class="btnSearch" value="导出" />
         <div id="table1"></div>
     </form>
 </div>
 <script>
+    layui.use(['layer', 'form'], function(){
+        layer = layui.layer;
+        form = layui.form;
 
+    });
+    let base64;
+    let fileName;
     $(function () {
-        $("#button1").on("click",function(){
+        $("#uploadExcel").on("click",function(){
+            var index = layer.load(1);
             console.log("文件上传");
             var s = document.getElementById('file1').files[0];
             var formData = new FormData();
@@ -47,21 +58,49 @@
                 async: false,
                 success: function(result) {
                     console.log(result);
-                    let list = result.data;
+                    const data = result.data;
+                    const list = data["accountTypeList"];
                     let table = "<table class='commonTable'>";
                     $.each(list,function(index,items){
                         table += "<tr><td>"+items.address+"</td><td>"+items.type+"</td>"+"</tr>";
                     });
                     table += "</table>";
                     $("#table1").html(table);
+                    base64 = data["base64"];
+                    fileName = data["fileName"];
+                    layer.close(index);
                 },
                 error : function(data){
-
+                    layer.close(index);
                 }
             });
         });
+        $("#exportExcel").on("click",function(){
+            if(base64 != undefined){
+                download(base64, fileName);
+            }
+        });
     });
-
+    function download(dataurl, fileName){
+        var bstr = atob(dataurl), //解析 base-64 编码的字符串
+            n = bstr.length,
+            u8arr = new Uint8Array(n); //创建初始化为0的，包含length个元素的无符号整型数组
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n); //返回字符串第一个字符的 Unicode 编码
+        }
+        var blob = new Blob([u8arr], { type: 'text/csv' });
+        if (window.navigator.msSaveBlob) { // // IE hack; see http://msdn.microsoft.com/en-us/library/ie/hh779016.aspx
+            window.navigator.msSaveOrOpenBlob(blob, fileName + new Date().toDateString() + '.xlsx');
+        }
+        else {
+            var a = window.document.createElement("a");
+            a.href = window.URL.createObjectURL(blob, { type: "application/vnd.ms-excel;charset=utf-8" });
+            a.download = fileName + new Date().toDateString() + ".xlsx";
+            document.body.appendChild(a);
+            a.click();  // IE: "Access is denied"; see: https://connect.microsoft.com/IE/feedback/details/797361/ie-10-treats-blob-url-as-cross-origin-and-denies-access
+            document.body.removeChild(a);
+        }
+    }
 </script>
 </body>
 </html>

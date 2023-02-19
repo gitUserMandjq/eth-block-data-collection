@@ -79,6 +79,9 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void batchInsertOrUpdateEns(List<EthEnsDTO> ensDTOList) throws Exception {
+        if(ensDTOList.isEmpty()){
+            return;
+        }
         List<String> tokenIds = ensDTOList.stream().map(EthEnsDTO::getTokenId).collect(Collectors.toList());
         List<EthEnsInfoModel> ensList = ethEnsInfoDao.listEnsByIds(tokenIds);
         Map<String, EthEnsInfoModel> ensMap = ensList.stream().collect(Collectors.toMap(EthEnsInfoModel::getTokenId, v -> v));
@@ -113,7 +116,9 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
             }
             addOrUpdateList.add(ethEnsInfoModel);
         }
-        ethEnsInfoDao.batchInsertModel(addOrUpdateList);
+        if(!addOrUpdateList.isEmpty()){
+            ethEnsInfoDao.batchInsertModel(addOrUpdateList);
+        }
     }
     /**
      * 查询ens列表

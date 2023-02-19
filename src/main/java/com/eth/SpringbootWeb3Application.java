@@ -1,6 +1,7 @@
 package com.eth;
 
 import com.eth.block.dao.EthBlockDao;
+import com.eth.framework.base.common.repository.impl.BatchSaveRepositoryImpl;
 import okhttp3.OkHttpClient;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -16,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = {
-        "com.eth"})
+        "com.eth"},repositoryBaseClass = BatchSaveRepositoryImpl.class)
 @RestController
 public class SpringbootWeb3Application {
 

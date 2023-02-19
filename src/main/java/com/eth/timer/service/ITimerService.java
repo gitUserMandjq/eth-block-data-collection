@@ -7,13 +7,13 @@ public interface ITimerService {
      * @param batchNumber
      * @throws Exception
      */
-    void dealEtlTask(Long high, Integer batchNumber)throws Exception;
+    void dealEtlEnsTask(Long high, Integer batchNumber)throws Exception;
     /**
      * 处理某个范围的区块链任务
      * @param batchNumber
      * @throws Exception
      */
-    void dealEtlTask(Integer batchNumber)throws Exception;
+    void dealEtlEnsTask(Integer batchNumber)throws Exception;
     /**
      * 处理某个范围的区块链任务
      * @param start
@@ -21,7 +21,7 @@ public interface ITimerService {
      * @param batchNumber
      * @throws Exception
      */
-    void dealEtlTask(Long start, Long high, Integer batchNumber)throws Exception;
+    void dealEtlEnsTask(Long start, Long high, Integer batchNumber)throws Exception;
 
     /**
      * 处理错误的任务

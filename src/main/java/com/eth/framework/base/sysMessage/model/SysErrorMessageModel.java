@@ -18,4 +18,5 @@ public class SysErrorMessageModel {
     private Integer status;//状态（0未处理1已处理）
     private Long blockNumber;//区块高度
     public static final String TYPE_ETHTASK = "ethtask";
+    public static final String TYPE_COMTASK = "comtask";
 }

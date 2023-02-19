@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-public class EthTaskServiceImpl implements IEtlTaskService {
+public class EtlTaskServiceImpl implements IEtlTaskService {
     @Resource
     IEthBlockService ethBlockService;
     @Resource
@@ -54,26 +54,26 @@ public class EthTaskServiceImpl implements IEtlTaskService {
      * @throws Exception
      */
     @Override
-    public void etlEthBlock(Long blockNumber, Integer retry) {
+    public void etlCommonBlock(List<Long> blockNumber, Integer retry) {
         Date beginTime = new Date();
         try {
             //通过web3.eth方法获取区块链和交易数据
-            EthBlock.Block block = ethBlockService.getEthBlock(blockNumber);
-            EthBlockModel blockModel = new EthBlockModel(block);
-            ethBlockService.insertOrUpdateEthBlock(blockModel);
-            {//新增或者编辑叔块表
-                List<String> uncles = block.getUncles();
-                for(String uncleHash:uncles){
-                    ethBlockService.insertOrUpdateEthBlockUncle(uncleHash, blockNumber);
+            List<EthBlock.Block> blockList = ethBlockService.getEthBlock(blockNumber);
+            for(EthBlock.Block block:blockList){
+                EthBlockModel blockModel = new EthBlockModel(block);
+                ethBlockService.insertOrUpdateEthBlock(blockModel);
+                {//新增或者编辑叔块表
+                    List<String> uncles = block.getUncles();
+                    for(String uncleHash:uncles){
+                        ethBlockService.insertOrUpdateEthBlockUncle(uncleHash, block.getNumber().longValue());
+                    }
                 }
             }
             {
                 //初步处理交易信息
-                HashMap<String, EthTxnModel> transactionMap = dealTransactionMap(block, blockModel);
-                HashMap<String, EthTxnModel> transactionEnsMap = new HashMap<>();
-                HashMap<String, EthEnsDTO> ensMap = new HashMap<>();
+                HashMap<String, EthTxnModel> transactionMap = dealTransactionMap(blockList);
                 //获取交易回执，交易回执返回的顺序其实和交易的顺序一致
-                String body = AlchemyUtils.alchemygetTransactionReceipts(Arrays.asList(blockNumber));
+                String body = AlchemyUtils.alchemygetTransactionReceipts(blockNumber);
                 Map<String, Object> resultMap = JsonUtil.string2Obj(body);
                 Map result = (Map) resultMap.get("result");
                 if(result.containsKey("receipts")){
@@ -93,62 +93,39 @@ public class EthTaskServiceImpl implements IEtlTaskService {
                         String contractAddress = receipt.getContractAddress();
                         for(Map l:logs){
                             String address = (String) l.get("address");//有关ENS的合约要靠事件调用来找到
-                            if(AlchemyUtils.ENSCONSTRACTADDRESS.equalsIgnoreCase(address)){//如果是ENS合约
-                                List<String> topics = (List<String>) l.get("topics");
-                                String topic0 = topics.get(0);//topic0就是函数名
-                                if(EthEventTopicConst.TRANSFER_EVENT_TOPIC.equals(topic0)){//tokenId在topic[3]
-                                    String from = topics.get(1).replace("0x000000000000000000000000","0x");
-                                    String to =  topics.get(2).replace("0x000000000000000000000000","0x");
-                                    String tokenId = topics.get(3);
-                                    log.info("from:"+from);
-                                    log.info("to:"+to);
-                                    log.info("tokenId:"+tokenId);
-                                    log.info("TransactionHash:"+txn.getTxnHash());
-                                    String nftMetadata = AlchemyUtils.getNFTMetadata(address, tokenId);
-                                    transactionEnsMap.put(txn.getTxnHash(), txn);
-                                    EthEnsDTO ethEnsDTO;
-                                    if(ensMap.containsKey(tokenId)){
-                                        ethEnsDTO = ensMap.get(tokenId);
-                                    }else{
-                                        Map map = JsonUtil.string2Obj(nftMetadata);
-                                        ethEnsDTO = new EthEnsDTO();
-                                        ethEnsDTO.setMeta(map);
-                                        ethEnsDTO.setTokenId(tokenId);
-                                        ethEnsDTO.setAddress(address);
-                                        ensMap.put(tokenId, ethEnsDTO);
-                                    }
-                                    ethEnsDTO.setFrom(from);
-                                    ethEnsDTO.setTo(to);
-                                    ethEnsDTO.setTxn(txn);
-                                }
+                            List<String> topics = (List<String>) l.get("topics");
+                            String topic0 = topics.get(0);//topic0就是函数名
+                            if(EthEventTopicConst.TRANSFER_EVENT_TOPIC.equals(topic0)){//tokenId在topic[3]
+//                                String from = topics.get(1).replace("0x000000000000000000000000","0x");
+//                                String to =  topics.get(2).replace("0x000000000000000000000000","0x");
+//                                String tokenId = topics.get(3);
+//                                log.info("from:"+from);
+//                                log.info("to:"+to);
+//                                log.info("tokenId:"+tokenId);
+//                                log.info("TransactionHash:"+txn.getTxnHash());
                             }
                         }
                     }
                 }
+                Date beginTime1 = new Date();
                 //批量新增交易信息
-    //            ethTxnService.batchInsertTransaction(transactionMap);
-                ethTxnService.batchInsertTransactionEns(transactionEnsMap);//交易数量有点多，先只保存ENS的数据
-                Iterator<Map.Entry<String, EthEnsDTO>> iterator = ensMap.entrySet().iterator();
-                while(iterator.hasNext()){
-                    Map.Entry<String, EthEnsDTO> next = iterator.next();
-                    EthEnsDTO value = next.getValue();
-                    ethEnsInfoService.insertOrUpdateEns(value);
-                }
+                ethTxnService.batchInsertTransaction(transactionMap);
+                log.info("batchInsertTransaction-costTime:{}ms",new Date().getTime() - beginTime1.getTime());
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             if(retry < 3){//重试三次
                 retry ++;
-                etlEthBlock(blockNumber, retry);
+                etlCommonBlock(blockNumber, retry);
                 return;
             }else{
-                sysErrorMessageService.addSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK, e.getMessage(), blockNumber);
+                sysErrorMessageService.addSysErrorMessage(SysErrorMessageModel.TYPE_COMTASK, e.getMessage(), blockNumber);
             }
         } finally {
             Long costTime = new Date().getTime() - beginTime.getTime();
             String message = "etlEthBlock消耗时间:"+(costTime+"ms");
             log.info(message);
-            sysMessageService.addSysMessage(SysMessageModel.TYPE_ETHTASK, message, blockNumber, costTime);
+            sysMessageService.addSysMessage(SysMessageModel.TYPE_COMTASK, message, blockNumber, costTime);
         }
     }
 
@@ -158,10 +135,12 @@ public class EthTaskServiceImpl implements IEtlTaskService {
      * @throws Exception
      */
     @Override
-    public void etlEthBlock(Long blockNumber, Integer retry, CountDownLatch latch){
+    public void etlCommonBlock(List<Long> blockNumber, Integer retry, CountDownLatch latch){
         threadPool.submit(()->{
-            etlEthBlock(blockNumber, retry);
-            latch.countDown();
+            etlCommonBlock(blockNumber, retry);
+            for(int i=0;i< blockNumber.size();i++){
+                latch.countDown();
+            }
         });
     }
     /**
@@ -170,15 +149,17 @@ public class EthTaskServiceImpl implements IEtlTaskService {
      * @throws Exception
      */
     @Override
-    public void etlEthBlock(Long blockNumber, Integer retry, CountDownLatch latch, Semaphore lock){
+    public void etlCommonBlock(List<Long> blockNumber, Integer retry, CountDownLatch latch, Semaphore lock){
         try {
             lock.acquire();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         threadPool.submit(()->{
-            etlEthBlock(blockNumber, retry);
-            latch.countDown();
+            etlCommonBlock(blockNumber, retry);
+            for(int i=0;i< blockNumber.size();i++){
+                latch.countDown();
+            }
             lock.release();
         });
     }
@@ -189,9 +170,9 @@ public class EthTaskServiceImpl implements IEtlTaskService {
      * @throws Exception
      */
     @Override
-    public void etlEthBlock(Long startBlockNumber, Long endBlockNumber) throws Exception {
+    public void etlCommonBlock(Long startBlockNumber, Long endBlockNumber) throws Exception {
         for(long i = startBlockNumber;i<endBlockNumber;i++){
-            etlEthBlock(i, 0);
+            etlCommonBlock(Arrays.asList(i), 0);
         }
     }
     /**
@@ -373,16 +354,31 @@ public class EthTaskServiceImpl implements IEtlTaskService {
         sysErrorMessageService.dealSysErrorMessage(logIds);
     }
 
-    private static HashMap<String, EthTxnModel> dealTransactionMap(EthBlock.Block block, EthBlockModel blockModel) {
+    private static HashMap<String, EthTxnModel> dealTransactionMap(EthBlock.Block block) {
         HashMap<String, EthTxnModel> transactionMap = new HashMap<>();
         List<EthBlock.TransactionResult> txs = block.getTransactions();
         txs.forEach(tx -> {//遍历交易列表
             EthBlock.TransactionObject transaction = (EthBlock.TransactionObject) tx.get();
             EthTxnModel txn = new EthTxnModel(transaction);
-            txn.setTimestamp(blockModel.getTimestamp());
+            txn.setTimestamp(block.getTimestamp().longValue());
             transactionMap.put(txn.getTxnHash(), txn);
 //            System.out.println(transaction.getFrom());
         });
+        return transactionMap;
+    }
+    private static HashMap<String, EthTxnModel> dealTransactionMap(List<EthBlock.Block> blockList) {
+        HashMap<String, EthTxnModel> transactionMap = new HashMap<>();
+        for(int i=0;i<blockList.size();i++){
+            EthBlock.Block block = blockList.get(i);
+            List<EthBlock.TransactionResult> txs = block.getTransactions();
+            txs.forEach(tx -> {//遍历交易列表
+                EthBlock.TransactionObject transaction = (EthBlock.TransactionObject) tx.get();
+                EthTxnModel txn = new EthTxnModel(transaction);
+                txn.setTimestamp(block.getTimestamp().longValue());
+                transactionMap.put(txn.getTxnHash(), txn);
+//            System.out.println(transaction.getFrom());
+            });
+        }
         return transactionMap;
     }
 
