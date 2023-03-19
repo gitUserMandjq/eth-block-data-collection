@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 
 
 @Repository
-public interface EthEventErc20TransferDao extends JpaRepository<EthEventErc20TransferModel,Long> , BatchSaveRepository<EthEventErc20TransferModel> {
+public interface EthEventErc20TransferDao extends JpaRepository<EthEventErc20TransferModel,String> , BatchSaveRepository<EthEventErc20TransferModel> {
 
 }

@@ -28,7 +28,7 @@ public class EthTxnModel {
     private String gasFee;
     private Integer status;
     private BigInteger nonce;
-    private Long timestamp;
+    private Date timestamp;
     private String contractAddress;
     private BigInteger cumulativeGasUsed;
     private BigInteger effectiveGasPrice;

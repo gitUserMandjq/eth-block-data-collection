@@ -23,6 +23,7 @@ public class BatchSaveRepositoryImpl<T,ID extends Serializable> extends SimpleJp
     private EntityManager em = null;
     private static Map<String, SqlStorage> sqlMap = new HashMap<>();
     private static final String SQL_INSERTIGNORE = "insert_ignore";
+    private static final String SQL_REPLACE = "replace";
     public BatchSaveRepositoryImpl(JpaEntityInformation entityInformation, EntityManager entityManager) {
         super(entityInformation, entityManager);
         this.em = entityManager;
@@ -60,6 +61,41 @@ public class BatchSaveRepositoryImpl<T,ID extends Serializable> extends SimpleJp
             Field[] field = clazz.getDeclaredFields();
             //拼接忽略插入语句
             SqlStorage sqlStorage = getInsertIgnoreSql(clazz, field);
+            Iterator<S> iterator = var1.iterator();
+            int index = 0;
+            StringBuilder sqlBuilder = new StringBuilder(sqlStorage.getInsertSql());
+            List<S> tempList = new ArrayList<>();
+            while (iterator.hasNext()){
+                S next = iterator.next();
+                sqlBuilder.append(sqlStorage.getValueSql());
+                tempList.add(next);
+                index++;
+                if (index % batchInt == 0){
+                    executeBatchSql(field, sqlBuilder, tempList);
+                    sqlBuilder = new StringBuilder(sqlStorage.getInsertSql());
+                    tempList = new ArrayList<>();
+                }
+            }
+            if (index % batchInt != 0){
+                executeBatchSql(field, sqlBuilder, tempList);
+            }
+        }
+        return var1;
+    }
+    /**
+     * 批量新增
+     * @param var1
+     * @return
+     */
+    @Override
+    @Transactional
+    public <S extends T> Iterable<S> batchReplace(Iterable<S> var1, int batchInt) throws Exception{
+        if(var1 != null && var1.iterator().hasNext()){
+            S o1 = var1.iterator().next();
+            Class<?> clazz = o1.getClass();
+            Field[] field = clazz.getDeclaredFields();
+            //拼接忽略插入语句
+            SqlStorage sqlStorage = getReplaceSql(clazz, field);
             Iterator<S> iterator = var1.iterator();
             int index = 0;
             StringBuilder sqlBuilder = new StringBuilder(sqlStorage.getInsertSql());
@@ -132,6 +168,28 @@ public class BatchSaveRepositoryImpl<T,ID extends Serializable> extends SimpleJp
             sqlStorage.setInsertSql(insertStr.toString());
             sqlStorage.setValueSql(valuesStr.toString());
             sqlMap.put(SQL_INSERTIGNORE+tableName, sqlStorage);
+        }
+        return sqlStorage;
+    }
+    @NotNull
+    private static SqlStorage getReplaceSql(Class<?> clazz, Field[] field) {
+        String tableName = ReflectUtils.getTableName(clazz);
+        SqlStorage sqlStorage = sqlMap.get(SQL_REPLACE + tableName);
+        if(sqlStorage == null){
+            sqlStorage = new SqlStorage();
+            StringBuilder insertStr = new StringBuilder("replace into `"+ tableName+"`(");
+            StringBuilder valuesStr = new StringBuilder("(");
+            for(Field f: field){
+                insertStr.append(" `"+ VariableNameConversion.humpToLowerLine(f.getName())+"`,");
+                valuesStr.append(" ?,");
+            }
+            insertStr.deleteCharAt(insertStr.length() - 1);
+            insertStr.append(") values");
+            valuesStr.deleteCharAt(valuesStr.length() - 1);
+            valuesStr.append("),");
+            sqlStorage.setInsertSql(insertStr.toString());
+            sqlStorage.setValueSql(valuesStr.toString());
+            sqlMap.put(SQL_REPLACE+tableName, sqlStorage);
         }
         return sqlStorage;
     }

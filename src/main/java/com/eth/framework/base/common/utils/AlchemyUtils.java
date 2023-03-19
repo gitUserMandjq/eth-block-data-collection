@@ -19,6 +19,7 @@ public class AlchemyUtils {
     public static String HOST = "https://eth-mainnet.alchemyapi.io";
     //炼金术的秘钥
     public static String ETH_HOST_STR = "J4ipt__b_exS1cez4CO9KhRkXEYWxUcJ,UdxThvKeKc9FbOwZZPtiWdjWs-_ex_pN,ml7esjvnZ2twDU8WenOz0U2c1iRXOyS5,K_oaFqRcqOsrpEgvdnm8RZN5-pqq04zQ,1dnGPiAwFzE35GHLaqXT1cLJtQAGjjGG,80tBHWkwsdPpnNVeDzFaIsf385mCDZuS,LRvE9ITS5Eg1w6Cngm3K8GpMAf8Tun1_";
+//    public static String ETH_HOST_STR = "UdxThvKeKc9FbOwZZPtiWdjWs-_ex_pN,ml7esjvnZ2twDU8WenOz0U2c1iRXOyS5,K_oaFqRcqOsrpEgvdnm8RZN5-pqq04zQ,1dnGPiAwFzE35GHLaqXT1cLJtQAGjjGG,80tBHWkwsdPpnNVeDzFaIsf385mCDZuS,LRvE9ITS5Eg1w6Cngm3K8GpMAf8Tun1_";
     public static String[] ETH_HOST;
     public static final String ENSCONSTRACTADDRESS = "0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85";//ENS的交换合约
     public static String isProxy = "0";
@@ -49,6 +50,9 @@ public class AlchemyUtils {
     }
     public static String getAlchemyPath(){
         return HOST + "/v2/" + getRandomEthHost();
+    }
+    public static String getAlchemyPath(String token){
+        return HOST + "/v2/" + token;
     }
     public static String getAlchemyNftPath(){
         return HOST + "/nft"+ "/v2/" + getRandomEthHost();
@@ -551,7 +555,7 @@ public class AlchemyUtils {
      * "type":"0x0"}]}}
      * @throws IOException
      */
-    public static String alchemygetTransactionReceipts(List<Long> blockNumber) throws Exception {
+    public static String alchemygetTransactionReceipts_(List<Long> blockNumber, String url) throws Exception {
 //        OkHttpClient.Builder builder = new OkHttpClient.Builder();
 //        //内容较长
 //        builder.connectTimeout(5, TimeUnit.MINUTES)
@@ -576,6 +580,87 @@ public class AlchemyUtils {
                 blockNumberList.add(m);
             }
             String data = JsonUtil.object2String(paraData);
+//            String url = getAlchemyPath();
+            log.info("url:" + url);
+            log.info("data:" + data);
+//            MediaType mediaType= MediaType.parse("application/json");
+//            RequestBody requestBody= RequestBody.create(mediaType, data);
+//            Request request = new Request.Builder()
+//                    .url(url)
+//                    .post(requestBody)
+//                    .addHeader("Accept", "application/json")
+//                    //                    .addHeader("X-API-KEY", "null")
+//                    .build();
+            try {
+                body = new CallResponseHandle(new CallResponse() {
+                    @Override
+                    public Response newCall() {
+                        return OkHttpClientUtil.getInstance().postData(url, data);
+                    }
+                }).callResponse();
+//                body = callResponse(client, request);
+                judgeResult(body);
+            } catch (Exception e) {
+                log.info("error:"+url);
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
+            } finally {
+                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+            }
+//            log.info("body:" + body);
+            return body;
+        }
+    }
+    public static String alchemygetTransactionReceipts(List<Long> blockNumber) throws Exception {
+//        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+//        //内容较长
+//        builder.connectTimeout(5, TimeUnit.MINUTES)
+//                .writeTimeout(5, TimeUnit.MINUTES)
+//                .readTimeout(5, TimeUnit.MINUTES);
+//        // 设置代理地址
+////        SocketAddress sa = new InetSocketAddress("127.0.0.1", 60959);
+////        builder.proxy(new Proxy(Proxy.Type.HTTP, sa));
+//        OkHttpClient client = builder.build();
+        String url = getAlchemyPath();
+        return alchemygetTransactionReceipts_(blockNumber, url);
+    }
+    public static String alchemygetTransactionReceipts(List<Long> blockNumber, String token) throws Exception {
+//        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+//        //内容较长
+//        builder.connectTimeout(5, TimeUnit.MINUTES)
+//                .writeTimeout(5, TimeUnit.MINUTES)
+//                .readTimeout(5, TimeUnit.MINUTES);
+//        // 设置代理地址
+////        SocketAddress sa = new InetSocketAddress("127.0.0.1", 60959);
+////        builder.proxy(new Proxy(Proxy.Type.HTTP, sa));
+//        OkHttpClient client = builder.build();
+        String url = getAlchemyPath(token);
+        return alchemygetTransactionReceipts_(blockNumber, url);
+    }
+    public static String alchemygetInternalTransactions(List<Long> blockNumber) throws Exception {
+//        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+//        //内容较长
+//        builder.connectTimeout(5, TimeUnit.MINUTES)
+//                .writeTimeout(5, TimeUnit.MINUTES)
+//                .readTimeout(5, TimeUnit.MINUTES);
+//        // 设置代理地址
+////        SocketAddress sa = new InetSocketAddress("127.0.0.1", 60959);
+////        builder.proxy(new Proxy(Proxy.Type.HTTP, sa));
+//        OkHttpClient client = builder.build();
+        {
+            String body = null;
+            Date beginTime = new Date();
+            Map<String, Object> paraData = new HashMap<>();
+            paraData.put("id", blockNumber.get(0));
+            paraData.put("jsonrpc","2.0");
+            paraData.put("method","trace_transaction");
+//            List<Map<String, String>> blockNumberList = new ArrayList<>();
+            List<String> blockNumberList = new ArrayList<>();
+            paraData.put("params", blockNumberList);
+            for(Long n:blockNumber){
+                blockNumberList.add("0x"+Long.toHexString(n));
+            }
+            String data = JsonUtil.object2String(paraData);
             String url = getAlchemyPath();
             log.info("url:" + url);
             log.info("data:" + data);
@@ -596,6 +681,7 @@ public class AlchemyUtils {
                 }).callResponse();
 //                body = callResponse(client, request);
                 judgeResult(body);
+                log.info(body);
             } catch (Exception e) {
                 log.info("error:"+url);
                 log.error(e.getMessage(), e);
@@ -664,7 +750,7 @@ public class AlchemyUtils {
             return body;
         }
     }
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
 //            String contractAddress = "0x67b36ba196804db198ac4c0a8359a1fafa5e5cff";//nft合约
 ////        String contractAddress = "0xb8c77482e45f1f44de1745f52c74426c631bdd52";//非nft合约
 //        try {
@@ -689,26 +775,26 @@ public class AlchemyUtils {
 //        } catch (IOException e) {
 //            log.info(e.getMessage(), e);
 //        }
-        {
-            //{"contractAddresses":["0xe785E82358879F061BC3dcAC6f0444462D4b5330","0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d"]}
-            List<String> contractAddresses = new ArrayList<>();
-            contractAddresses.add("0xe785E82358879F061BC3dcAC6f0444462D4b5330");
-            contractAddresses.add("0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d");
-            contractAddresses.add("0x8D57dAc649760e11660B38f201292095f0000eA8");
-            contractAddresses.add(ENSCONSTRACTADDRESS);
-            contractAddresses.add("0xB8c77482e45F1F44dE1745F52C74426C631bDD52");
-            getContractMetadataBatch(contractAddresses);
-        }
-        {
-            //{"contractAddresses":["0xe785E82358879F061BC3dcAC6f0444462D4b5330","0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d"]}
-            List<String> contractAddresses = new ArrayList<>();
+//        {
+//            //{"contractAddresses":["0xe785E82358879F061BC3dcAC6f0444462D4b5330","0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d"]}
+//            List<String> contractAddresses = new ArrayList<>();
 //            contractAddresses.add("0xe785E82358879F061BC3dcAC6f0444462D4b5330");
 //            contractAddresses.add("0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d");
 //            contractAddresses.add("0x8D57dAc649760e11660B38f201292095f0000eA8");
-            contractAddresses.add(ENSCONSTRACTADDRESS);
+//            contractAddresses.add(ENSCONSTRACTADDRESS);
 //            contractAddresses.add("0xB8c77482e45F1F44dE1745F52C74426C631bDD52");
-            getTokenMetadata(contractAddresses);
-        }
+//            getContractMetadataBatch(contractAddresses);
+//        }
+//        {
+//            //{"contractAddresses":["0xe785E82358879F061BC3dcAC6f0444462D4b5330","0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d"]}
+//            List<String> contractAddresses = new ArrayList<>();
+////            contractAddresses.add("0xe785E82358879F061BC3dcAC6f0444462D4b5330");
+////            contractAddresses.add("0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d");
+////            contractAddresses.add("0x8D57dAc649760e11660B38f201292095f0000eA8");
+//            contractAddresses.add(ENSCONSTRACTADDRESS);
+////            contractAddresses.add("0xB8c77482e45F1F44dE1745F52C74426C631bDD52");
+//            getTokenMetadata(contractAddresses);
+//        }
 //        String raw = "https://metadata.ens.domains/mainnet/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/0x4cbedf505977ad2333f03571681875b18ea2e1837c0791da20ee246e3ea7f34c";
 //        try {
 //            String body = getNFTMetadataByRaw(raw);
@@ -739,6 +825,7 @@ public class AlchemyUtils {
 //            }
 //        }
         {
+//            alchemygetInternalTransactions(Arrays.asList(12098316L));
 //            String body = getBlockByNumber(14919289L, true);
         }
     }

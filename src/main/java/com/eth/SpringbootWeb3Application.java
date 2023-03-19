@@ -28,7 +28,8 @@ public class SpringbootWeb3Application {
   EthBlockDao ethBlockDao;
   @Bean
   public Web3j web3j() {
-    String ip  = "https://eth-mainnet.alchemyapi.io/v2/J4ipt__b_exS1cez4CO9KhRkXEYWxUcJ";
+//    String ip  = "https://eth-mainnet.alchemyapi.io/v2/J4ipt__b_exS1cez4CO9KhRkXEYWxUcJ";
+    String ip  = "https://eth-mainnet.alchemyapi.io/v2/UdxThvKeKc9FbOwZZPtiWdjWs-_ex_pN";
     OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
     builder.connectTimeout(30*1000, TimeUnit.MILLISECONDS);
     builder.writeTimeout(30*1000, TimeUnit.MILLISECONDS);

@@ -19,4 +19,5 @@ public class SysMessageModel {
     private Long costTime;//消耗时间
     public static final String TYPE_ETHTASK = "ethtask";
     public static final String TYPE_COMTASK = "comtask";
+    public static final String TYPE_BLOCKTASK = "blocktask";
 }

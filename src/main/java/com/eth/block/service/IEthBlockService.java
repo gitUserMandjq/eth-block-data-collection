@@ -31,12 +31,26 @@ public interface IEthBlockService {
     EthBlockModel insertOrUpdateEthBlock(EthBlockModel ethBlockModel)throws Exception;
     /**
      * 新增或者更新区块链
+     * @param ethBlockModel
+     * @return
+     * @throws Exception
+     */
+    void insertBatchEthBlock(Iterable<EthBlockModel> ethBlockModel)throws Exception;
+    /**
+     * 新增或者更新区块链
      * @param uncleHash
      * @param blockNumber
      * @return
      * @throws Exception
      */
     EthBlockUncleModel insertOrUpdateEthBlockUncle(String uncleHash, Long blockNumber)throws Exception;
+    /**
+     * 新增或者更新区块链
+     * @param list
+     * @return
+     * @throws Exception
+     */
+    void insertBatchEthBlockUncle(Iterable<EthBlockUncleModel> list)throws Exception;
 
     /**
      * 获取当前区块高度

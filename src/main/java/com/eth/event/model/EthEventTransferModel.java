@@ -10,9 +10,9 @@ import java.math.BigInteger;
 import java.util.Date;
 
 @Entity
-@Table(name = "eth_event_erc20_transfer")
+@Table(name = "eth_event_transfer")
 @Data
-public class EthEventErc20TransferModel {
+public class EthEventTransferModel {
     @Id
     @Column(name="id")
     private String id;//主键
@@ -30,19 +30,25 @@ public class EthEventErc20TransferModel {
     private Date timestamp;//交易时间
     @Column(name="token_address")
     private String tokenAddress;//代币地址
+    @Column(name="operator")
+    private String operator = "";//操作人？
     @Column(name="from_address")
     private String fromAddress;//转出地址
     @Column(name="to_address")
     private String toAddress;//转入地址
+    @Column(name="token_id")
+    private String tokenId;//NFT编号
     @Column(name="token_value")
     private BigInteger tokenValue = BigInteger.valueOf(0);//交易数量
     @Column(name="created_at")
     private Date createdAt;
     @Column(name="updated_at")
     private Date updatedAt;
+    @Column(name="method_type")
+    private String methodType;//交易函数类型
 
 
-    public EthEventErc20TransferModel() {
+    public EthEventTransferModel() {
 
     }
 

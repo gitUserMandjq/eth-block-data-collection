@@ -27,7 +27,7 @@ public class EthBlockModel {
     private String extraData;//挖矿额外信息
     private String gasLimit;//区块GAS限制
     private String gasUsed;//区块已消耗GAS
-    private Long timestamp;//区块产出时间
+    private Date timestamp;//区块产出时间
     private Integer txnCount;//交易容量
     private String baseFeePerGas;//基础GAS费（销毁ETH）
     private String burntFee;//销毁ETH
@@ -47,7 +47,7 @@ public class EthBlockModel {
         this.extraData = block.getExtraData();
         this.gasLimit = block.getGasLimit().toString();
         this.gasUsed = block.getGasUsed().toString();
-        this.timestamp = block.getTimestamp().longValue();
+        this.timestamp = new Date(block.getTimestamp().longValue() * 1000L);
         this.txnCount = block.getTransactions().size();
         if(block.getBaseFeePerGasRaw() != null){
             this.baseFeePerGas = block.getBaseFeePerGas().toString();

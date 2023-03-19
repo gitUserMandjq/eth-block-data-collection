@@ -6,13 +6,12 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.math.BigInteger;
 import java.util.Date;
 
 @Entity
-@Table(name = "eth_event_erc20_transfer")
+@Table(name = "eth_event_erc721_transfer")
 @Data
-public class EthEventErc20TransferModel {
+public class EthEventErc721TransferModel {
     @Id
     @Column(name="id")
     private String id;//主键
@@ -34,15 +33,14 @@ public class EthEventErc20TransferModel {
     private String fromAddress;//转出地址
     @Column(name="to_address")
     private String toAddress;//转入地址
-    @Column(name="token_value")
-    private BigInteger tokenValue = BigInteger.valueOf(0);//交易数量
+    @Column(name="token_id")
+    private String tokenId;//NFT编号
     @Column(name="created_at")
     private Date createdAt;
     @Column(name="updated_at")
     private Date updatedAt;
 
-
-    public EthEventErc20TransferModel() {
+    public EthEventErc721TransferModel() {
 
     }
 

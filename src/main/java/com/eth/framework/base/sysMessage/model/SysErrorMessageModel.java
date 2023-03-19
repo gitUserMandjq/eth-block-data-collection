@@ -19,4 +19,5 @@ public class SysErrorMessageModel {
     private Long blockNumber;//区块高度
     public static final String TYPE_ETHTASK = "ethtask";
     public static final String TYPE_COMTASK = "comtask";
+    public static final String TYPE_BLOCKTASK = "blocktask";
 }

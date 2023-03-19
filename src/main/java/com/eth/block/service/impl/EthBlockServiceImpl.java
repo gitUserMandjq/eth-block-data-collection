@@ -5,10 +5,9 @@ import com.eth.block.dao.EthBlockUncleDao;
 import com.eth.block.model.EthBlockModel;
 import com.eth.block.model.EthBlockUncleModel;
 import com.eth.block.service.IEthBlockService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.eth.framework.base.common.utils.Web3jUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.BatchRequest;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Request;
@@ -24,8 +23,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class EthBlockServiceImpl implements IEthBlockService {
-    @Autowired
-    private Web3j web3j;
+//    @Autowired
+//    private Web3j web3j;
     @Resource
     EthBlockDao ethBlockDao;
     @Resource
@@ -37,7 +36,7 @@ public class EthBlockServiceImpl implements IEthBlockService {
      */
     @Override
     public EthBlock.Block getEthBlock(Long blockNumer) throws IOException {
-        EthBlock.Block block = web3j.ethGetBlockByNumber(DefaultBlockParameter.valueOf(
+        EthBlock.Block block = Web3jUtil.getInstance().getWeb3j().ethGetBlockByNumber(DefaultBlockParameter.valueOf(
                 BigInteger.valueOf(blockNumer)), true).send().getBlock();
         return block;
     }
@@ -52,13 +51,19 @@ public class EthBlockServiceImpl implements IEthBlockService {
         if(blockNumerList == null || !blockNumerList.iterator().hasNext()){
             return new ArrayList<>();
         }
-        BatchRequest batchRequest = web3j.newBatch();
+//        List<EthBlock.Block> list = new ArrayList<>();
+//        for (Long blockNumer : blockNumerList) {
+//            list.add(getEthBlock(blockNumer));
+//        }
+//        return list;
+        BatchRequest batchRequest = Web3jUtil.getInstance().getWeb3j().newBatch();
         for (Long blockNumer : blockNumerList) {
-            Request<?, EthBlock> request = web3j.ethGetBlockByNumber(DefaultBlockParameter.valueOf(
+            Request<?, EthBlock> request = Web3jUtil.getInstance().getWeb3j().ethGetBlockByNumber(DefaultBlockParameter.valueOf(
                     BigInteger.valueOf(blockNumer)), true);
             batchRequest.add(request);
         }
-        List<? extends EthBlock> responses = (List<? extends EthBlock>) batchRequest.sendAsync().get().getResponses();
+//        List<? extends EthBlock> responses = (List<? extends EthBlock>) batchRequest.sendAsync().get().getResponses();
+        List<? extends EthBlock> responses = (List<? extends EthBlock>) batchRequest.send().getResponses();
         return responses.stream().map(EthBlock::getBlock).collect(Collectors.toList());
     }
     /**
@@ -75,6 +80,17 @@ public class EthBlockServiceImpl implements IEthBlockService {
     }
     /**
      * 新增或者更新区块链
+     * @param ethBlockModel
+     * @return
+     * @throws Exception
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void insertBatchEthBlock(Iterable<EthBlockModel> ethBlockModel)throws Exception{
+        ethBlockDao.batchIgnoreSave(ethBlockModel, 500);
+    }
+    /**
+     * 新增或者更新区块链
      * @param uncleHash
      * @param blockNumber
      * @return
@@ -88,12 +104,23 @@ public class EthBlockServiceImpl implements IEthBlockService {
         return model;
     }
     /**
+     * 新增或者更新区块链
+     * @param list
+     * @return
+     * @throws Exception
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void insertBatchEthBlockUncle(Iterable<EthBlockUncleModel> list)throws Exception{
+        ethBlockUncleDao.batchIgnoreSave(list, 500);
+    }
+    /**
      * 获取当前区块高度
      * @return
      */
     @Override
     public BigInteger getCurrentBlockNumber() throws IOException {
-        Request<?, EthBlockNumber> request = web3j.ethBlockNumber();
+        Request<?, EthBlockNumber> request = Web3jUtil.getInstance().getWeb3j().ethBlockNumber();
         return request.send().getBlockNumber();
     }
 

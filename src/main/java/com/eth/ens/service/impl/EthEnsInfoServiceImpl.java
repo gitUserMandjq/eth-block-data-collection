@@ -52,9 +52,9 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
         }
         EthTxnModel txn = ensDTO.getTxn();
         if(txn != null){
-            Long timestamp = txn.getTimestamp();
-            if(ethEnsInfoModel.getLastTxnTime() == null || ethEnsInfoModel.getLastTxnTime().getTime() <= timestamp){
-                ethEnsInfoModel.setLastTxnTime(new Date(timestamp));
+            Date timestamp = txn.getTimestamp();
+            if(ethEnsInfoModel.getLastTxnTime() == null || ethEnsInfoModel.getLastTxnTime().getTime() <= timestamp.getTime()){
+                ethEnsInfoModel.setLastTxnTime(timestamp);
                 ethEnsInfoModel.setLastTxnHash(txn.getTxnHash());
                 ethEnsInfoModel.setLastTxnFee(txn.getEthValue().longValue());
                 ethEnsInfoModel.setOwner(ensDTO.getTo());
@@ -101,9 +101,9 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
             }
             EthTxnModel txn = ensDTO.getTxn();
             if(txn != null){
-                Long timestamp = txn.getTimestamp();
-                if(ethEnsInfoModel.getLastTxnTime() == null || ethEnsInfoModel.getLastTxnTime().getTime() <= timestamp){
-                    ethEnsInfoModel.setLastTxnTime(new Date(timestamp));
+                Date timestamp = txn.getTimestamp();
+                if(ethEnsInfoModel.getLastTxnTime() == null || ethEnsInfoModel.getLastTxnTime().getTime() <= timestamp.getTime()){
+                    ethEnsInfoModel.setLastTxnTime(timestamp);
                     ethEnsInfoModel.setLastTxnHash(txn.getTxnHash());
                     ethEnsInfoModel.setLastTxnFee(txn.getEthValue().longValue());
                     ethEnsInfoModel.setOwner(ensDTO.getTo());
@@ -117,7 +117,7 @@ public class EthEnsInfoServiceImpl implements IEthEnsInfoService {
             addOrUpdateList.add(ethEnsInfoModel);
         }
         if(!addOrUpdateList.isEmpty()){
-            ethEnsInfoDao.batchInsertModel(addOrUpdateList);
+            ethEnsInfoDao.batchReplace(addOrUpdateList, 500);
         }
     }
     /**

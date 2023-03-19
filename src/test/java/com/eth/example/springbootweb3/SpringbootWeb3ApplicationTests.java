@@ -7,13 +7,10 @@ import com.eth.ens.dao.EthEnsInfoDao;
 import com.eth.etlTask.service.IEtlTaskService;
 import com.eth.timer.service.ITimerService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.web3j.protocol.Web3j;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -32,8 +29,8 @@ class SpringbootWeb3ApplicationTests {
   EthEnsInfoDao ethEnsInfoDao;
   @Resource
   ITimerService timerService;
-  @Autowired
-  private Web3j web3j;
+//  @Autowired
+//  private Web3j web3j;
   @Test
   void contextLoads() throws Exception {
 //    etlTaskService.etlEthBlock(14669839L, 3);
@@ -46,12 +43,14 @@ class SpringbootWeb3ApplicationTests {
 //    Long high = start + 5000L;
     Integer batchNumber = 10;
     List<Long> ids = new ArrayList<>();
-    ids.add(10000000L);
-    ids.add(10000001L);
-    ids.add(10000002L);
-    ids.add(10000003L);
-    ids.add(10000004L);
-    etlTaskService.etlCommonBlock(Arrays.asList(10000000L), 3);
+    ids.add(12098316L);
+//    ids.add(10000001L);
+//    ids.add(10000002L);
+//    ids.add(10000003L);
+//    ids.add(10000004L);
+    etlTaskService.etlBlock(214797L, start, 100);
+//    etlTaskService.etlBlock(ids, 3);
+//    etlTaskService.etlCommonBlock(ids, 3);
 //    timerService.dealErrorEthTask(100);
 //    timerService.dealEtlTask(20);
 //    dealEtlTask(start, high, batchNumber);

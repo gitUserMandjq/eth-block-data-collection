@@ -10,6 +10,19 @@ public interface IEtlTaskService {
      * @param blockNumber
      * @throws Exception
      */
+    void etlBlock(List<Long> blockNumber, Integer retry);
+    /**
+     * 解析某一高度的区块链数据
+     * @param start
+     * @param end
+     * @throws Exception
+     */
+    void etlBlock(Long start, Long end, Integer gap);
+    /**
+     * 解析某一高度的区块链数据
+     * @param blockNumber
+     * @throws Exception
+     */
     void etlCommonBlock(List<Long> blockNumber, Integer retry);
     /**
      * 解析某一高度的区块链数据
