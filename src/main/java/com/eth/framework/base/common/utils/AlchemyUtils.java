@@ -31,7 +31,8 @@ public class AlchemyUtils {
             Properties property = new Properties();
             property.load(is);
             HOST = PropertiesUtils.readValue(property, "alchemy.server.host");
-            ETH_HOST_STR = PropertiesUtils.readValue(property, "alchemy.server.apptokens");
+            ETH_HOST_STR = PropertiesUtils.readValue(property, "alchemy.server.apptokens1")
+             + "," + PropertiesUtils.readValue(property, "alchemy.server.apptokens2");
             isProxy = PropertiesUtils.readValue(property, "alchemy.server.isProxy");
             ETH_HOST = ETH_HOST_STR.split(",");
         } catch (IOException e) {

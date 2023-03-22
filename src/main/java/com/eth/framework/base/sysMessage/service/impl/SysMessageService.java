@@ -66,6 +66,18 @@ public class SysMessageService implements ISysMessageService {
         }
     }
     /**
+     * 根据区块高度查询解析日志
+     * @param type
+     * @param blockNumber
+     * @return
+     */
+    @Override
+    public List<SysMessageModel> listSysMessageByBlockNumber(String type, List<Long> blockNumber) {
+        List<SysMessageModel> sysMessageModels = sysMessageDao.listSysMessageByBlockNumber(type, blockNumber);
+        return sysMessageModels;
+    }
+
+    /**
      * 获取某个消息的最大处理值
      * @param type
      * @return

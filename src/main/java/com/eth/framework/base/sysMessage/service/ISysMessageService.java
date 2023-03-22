@@ -23,6 +23,14 @@ public interface ISysMessageService {
     void addSysMessage(String type, String message, List<Long> blockNumber, Long costTime);
 
     /**
+     * 根据区块高度查询解析日志
+     * @param type
+     * @param blockNumber
+     * @return
+     */
+    List<SysMessageModel> listSysMessageByBlockNumber(String type, List<Long> blockNumber);
+
+    /**
      * 获取某个消息的最大处理值
      * @param type
      * @return

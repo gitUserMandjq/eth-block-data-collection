@@ -29,7 +29,8 @@ public class Web3jUtil {
                     "utf-8");
             Properties property = new Properties();
             property.load(is);
-            ETH_HOST_STR = PropertiesUtils.readValue(property, "alchemy.server.apptokens");
+            ETH_HOST_STR = PropertiesUtils.readValue(property, "alchemy.server.apptokens1")
+                + "," + PropertiesUtils.readValue(property, "alchemy.server.apptokens2");
         } catch (IOException e) {
             log.error(e.getMessage());
             e.printStackTrace();

@@ -36,19 +36,19 @@ class SpringbootWeb3ApplicationTests {
 //    etlTaskService.etlEthBlock(14669839L, 3);
 //    etlTaskService.etlEns(14669839L, 3);
     Date beginTime = new Date();
-    Long high = 14000000L;
+    //2023-3-1
+    Long high = 16727705L;
 //    Long start = 9380422L;
-    Long start = 10000000L;
+    //2022-8-1
+    Long start = 15251202L;
 //    Long start = 14669839L;
 //    Long high = start + 5000L;
     Integer batchNumber = 10;
-    List<Long> ids = new ArrayList<>();
-    ids.add(12098316L);
 //    ids.add(10000001L);
 //    ids.add(10000002L);
 //    ids.add(10000003L);
 //    ids.add(10000004L);
-    etlTaskService.etlBlock(214797L, start, 100);
+    etlTaskService.etlCommonBlock(start, high, 20);
 //    etlTaskService.etlBlock(ids, 3);
 //    etlTaskService.etlCommonBlock(ids, 3);
 //    timerService.dealErrorEthTask(100);

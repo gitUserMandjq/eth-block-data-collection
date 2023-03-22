@@ -10,39 +10,34 @@ public interface IEtlTaskService {
      * @param blockNumber
      * @throws Exception
      */
-    void etlBlock(List<Long> blockNumber, Integer retry);
-    /**
-     * 解析某一高度的区块链数据
-     * @param start
-     * @param end
-     * @throws Exception
-     */
-    void etlBlock(Long start, Long end, Integer gap);
-    /**
-     * 解析某一高度的区块链数据
-     * @param blockNumber
-     * @throws Exception
-     */
     void etlCommonBlock(List<Long> blockNumber, Integer retry);
     /**
      * 解析某一高度的区块链数据
      * @param blockNumber
      * @throws Exception
      */
-    void etlCommonBlock(List<Long> blockNumber, Integer retry, CountDownLatch latch);
+    void etlCommonBlock(List<Long> blockNumber, Integer retry, boolean filterNumber);
     /**
      * 解析某一高度的区块链数据
      * @param blockNumber
      * @throws Exception
      */
-    void etlCommonBlock(List<Long> blockNumber, Integer retry, CountDownLatch latch, Semaphore lock);
+    void etlCommonBlock(List<Long> blockNumber, Integer retry, boolean filterNumber, CountDownLatch latch);
+    /**
+     * 解析某一高度的区块链数据
+     * @param blockNumber
+     * @throws Exception
+     */
+    void etlCommonBlock(List<Long> blockNumber, Integer retry, boolean filterNumber, CountDownLatch latch, Semaphore lock);
+
+
     /**
      * 解析某一高度的区块链数据
      * @param startBlockNumber
      * @param endBlockNumber
      * @throws Exception
      */
-    void etlCommonBlock(Long startBlockNumber, Long endBlockNumber)throws Exception;
+    void etlCommonBlock(Long startBlockNumber, Long endBlockNumber, Integer batchNum)throws Exception;
     /**
      * 解析某一高度的ens数据
      * @param blockNumber

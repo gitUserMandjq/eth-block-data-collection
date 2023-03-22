@@ -54,97 +54,6 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
     ExecutorService threadPool= Executors.newFixedThreadPool(20);
 
 
-    /**
-     * 解析某一高度的区块链数据
-     * @param blockNumberList
-     * @throws Exception
-     */
-    @Override
-    public void etlBlock(List<Long> blockNumberList, Integer retry) {
-        Date beginTime = new Date();
-        //通过web3.eth方法获取区块链和交易数据
-        try {
-            List<EthBlock.Block> blockList = ethBlockService.getEthBlock(blockNumberList);
-            List<EthBlockModel> blockModelList = new ArrayList<>();
-            List<EthBlockUncleModel> blockUncleModelList = new ArrayList<>();
-            log.info("blockNumberList:{}", JsonUtil.object2String(blockNumberList));
-            for(EthBlock.Block block:blockList){
-                if(block == null){
-                    log.info("block:{}", JsonUtil.object2String(blockList));
-                    throw new Exception("block为空");
-                }
-                EthBlockModel blockModel = new EthBlockModel(block);
-                blockModelList.add(blockModel);
-//                ethBlockService.insertOrUpdateEthBlock(blockModel);
-                {//新增或者编辑叔块表
-                    List<String> uncles = block.getUncles();
-                    for(String uncleHash:uncles){
-                        EthBlockUncleModel model = new EthBlockUncleModel(uncleHash, block.getNumber().longValue());
-                        blockUncleModelList.add(model);
-//                        ethBlockService.insertOrUpdateEthBlockUncle(uncleHash, block.getNumber().longValue());
-                    }
-                }
-            }
-            ethBlockService.insertBatchEthBlock(blockModelList);
-            ethBlockService.insertBatchEthBlockUncle(blockUncleModelList);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            if(retry < 3){//重试三次
-                retry ++;
-                etlBlock(blockNumberList, retry);
-                return;
-            }else{
-                String message = e.getMessage();
-                if(e.getMessage().length() > 300){
-                    message = message.substring(0, 300);
-                }
-                sysErrorMessageService.addSysErrorMessage(SysErrorMessageModel.TYPE_BLOCKTASK, message, blockNumberList);
-            }
-        } finally {
-            Long costTime = new Date().getTime() - beginTime.getTime();
-            String message = "etlEthBlock消耗时间:"+(costTime+"ms");
-            log.info(message);
-//            sysMessageService.addSysMessage(SysMessageModel.TYPE_BLOCKTASK, message, blockNumberList, costTime);
-        }
-    }
-    /**
-     * 解析某一高度的区块链数据
-     * @param start
-     * @param end
-     * @throws Exception
-     */
-    @Override
-    public void etlBlock(Long start, Long end, Integer gap){
-        CountDownLatch latch = new CountDownLatch((int)(end - start + 1));
-        Semaphore lock = new Semaphore(10);
-        while(start <= end){
-            List<Long> blockNumberList = new ArrayList<>();
-            for(long i=start;i<end&&i<start+gap;i++){
-                blockNumberList.add(i);
-            }
-            etlBlock(blockNumberList, 0, latch, lock);
-            start += gap;
-        }
-    }
-    /**
-     * 解析某一高度的区块链数据
-     * @param blockNumber
-     * @throws Exception
-     */
-    public void etlBlock(List<Long> blockNumber, Integer retry, CountDownLatch latch, Semaphore lock){
-        try {
-            lock.acquire();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        threadPool.submit(()->{
-            etlBlock(blockNumber, retry);
-            for(int i=0;i< blockNumber.size();i++){
-                latch.countDown();
-            }
-            lock.release();
-        });
-    }
 
     /**
      * 解析某一高度的区块链数据
@@ -153,8 +62,23 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
      */
     @Override
     public void etlCommonBlock(List<Long> blockNumberList, Integer retry) {
+        etlCommonBlock(blockNumberList, retry, true);
+    }
+    /**
+     * 解析某一高度的区块链数据
+     * @param blockNumberList
+     * @throws Exception
+     */
+    @Override
+    public void etlCommonBlock(List<Long> blockNumberList, Integer retry, boolean filterNumber) {
         Date beginTime = new Date();
+        String taskType = SysMessageModel.TYPE_COMTASK;
         try {
+            log.info("ethCommonBlock:retry:{}, filterNumber:{}, blockNumberList:{}", retry, filterNumber,blockNumberList.toString());
+            if(filterNumber){
+                //筛选区块，如果已经处理过了，那么就不再处理
+                filterBlockNumer(blockNumberList, taskType);
+            }
 //            //通过web3.eth方法获取区块链和交易数据
             List<EthBlock.Block> blockList = ethBlockService.getEthBlock(blockNumberList);
             List<EthBlockModel> blockModelList = new ArrayList<>();
@@ -227,10 +151,13 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                 ethEventTransferService.addBatchEventTransfer(transferList);
                 log.info("batchInsertTransaction-costTime:{}ms",new Date().getTime() - beginTime1.getTime());
             }
+            Long costTime = new Date().getTime() - beginTime.getTime();
+            String message = "etlEthBlock消耗时间:"+(costTime+"ms");
+            log.info(message);
+            sysMessageService.addSysMessage(taskType, message, blockNumberList, costTime);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            if(retry < 3){//重试三次
-                retry ++;
+            if(++retry < 3){//重试三次
                 etlCommonBlock(blockNumberList, retry);
                 return;
             }else{
@@ -238,13 +165,21 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                 if(e.getMessage().length() > 300){
                     message = message.substring(0, 300);
                 }
-                sysErrorMessageService.addSysErrorMessage(SysErrorMessageModel.TYPE_COMTASK, message, blockNumberList);
+                sysErrorMessageService.addSysErrorMessage(taskType, message, blockNumberList);
             }
         } finally {
-            Long costTime = new Date().getTime() - beginTime.getTime();
-            String message = "etlEthBlock消耗时间:"+(costTime+"ms");
-            log.info(message);
-            sysMessageService.addSysMessage(SysMessageModel.TYPE_COMTASK, message, blockNumberList, costTime);
+        }
+    }
+
+    /**
+     * 筛选区块，如果已经处理过了则去除
+     * @param blockNumberList
+     * @param taskType
+     */
+    private void filterBlockNumer(List<Long> blockNumberList, String taskType) {
+        List<SysMessageModel> sysMessageModels = sysMessageService.listSysMessageByBlockNumber(taskType, blockNumberList);
+        for(SysMessageModel message:sysMessageModels){
+            blockNumberList.remove(message.getBlockNumber());
         }
     }
 
@@ -283,7 +218,8 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
         }
         data = data.substring(64*count+64);
         for(int i = 0;i<count;i++){
-            tokenNumArr[i] = Numeric.decodeQuantity("0x" + data.substring(i*64,i*64+64));
+            String tokenNumHex = ("0x" + data.substring(i*64,i*64+64)).replaceAll("0x[0]*", "0x");
+            tokenNumArr[i] = Numeric.decodeQuantity(tokenNumHex);
         }
         String logIndexStr = (String) l.get("logIndex");
         BigInteger logIndex = Numeric.decodeQuantity(logIndexStr);
@@ -334,7 +270,8 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
         String to =  topics.get(3).replace("0x000000000000000000000000","0x");
         String data = (String) l.get("data");
         String tokenId = data.substring(0, 66);
-        BigInteger tokenNum = Numeric.decodeQuantity("0x" + data.substring(66, 130));
+        String tokenNumHex = ("0x" + data.substring(66, 130)).replaceAll("0x[0]*", "0x");
+        BigInteger tokenNum = Numeric.decodeQuantity(tokenNumHex);
         String logIndexStr = (String) l.get("logIndex");
         BigInteger logIndex = Numeric.decodeQuantity(logIndexStr);
         Boolean removed = (Boolean) l.get("removed");
@@ -407,9 +344,9 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
      * @throws Exception
      */
     @Override
-    public void etlCommonBlock(List<Long> blockNumber, Integer retry, CountDownLatch latch){
+    public void etlCommonBlock(List<Long> blockNumber, Integer retry, boolean filterNumber, CountDownLatch latch){
         threadPool.submit(()->{
-            etlCommonBlock(blockNumber, retry);
+            etlCommonBlock(blockNumber, retry, filterNumber);
             for(int i=0;i< blockNumber.size();i++){
                 latch.countDown();
             }
@@ -421,14 +358,14 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
      * @throws Exception
      */
     @Override
-    public void etlCommonBlock(List<Long> blockNumber, Integer retry, CountDownLatch latch, Semaphore lock){
+    public void etlCommonBlock(List<Long> blockNumber, Integer retry, boolean filterNumber, CountDownLatch latch, Semaphore lock){
         try {
             lock.acquire();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         threadPool.submit(()->{
-            etlCommonBlock(blockNumber, retry);
+            etlCommonBlock(blockNumber, retry, filterNumber);
             for(int i=0;i< blockNumber.size();i++){
                 latch.countDown();
             }
@@ -442,9 +379,17 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
      * @throws Exception
      */
     @Override
-    public void etlCommonBlock(Long startBlockNumber, Long endBlockNumber) throws Exception {
-        for(long i = startBlockNumber;i<endBlockNumber;i++){
-            etlCommonBlock(Arrays.asList(i), 0);
+    public void etlCommonBlock(Long startBlockNumber, Long endBlockNumber, Integer batchNum) throws Exception {
+        log.info("startNumber:{},endNumer:{}", startBlockNumber, endBlockNumber);
+        CountDownLatch latch = new CountDownLatch((int)(endBlockNumber - startBlockNumber + 1));
+        Semaphore lock = new Semaphore(20);
+        for(long i = startBlockNumber;i<=endBlockNumber;i+=batchNum){
+            long end = i + batchNum;
+            List<Long> blockNumberList = new ArrayList<>();
+            for(long j=i;j<end&&j<=endBlockNumber;j++){
+                blockNumberList.add(j);
+            }
+            etlCommonBlock(blockNumberList, 0, false, latch, lock);
         }
     }
     /**
@@ -464,70 +409,74 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
     @Override
     public void etlEns(List<Long> blockNumber, Integer retry) {
         Date beginTime = new Date();
+        String taskType = SysMessageModel.TYPE_ETHTASK;
         try {
-            {
-                //初步处理交易信息
-                HashMap<String, EthEnsDTO> ensMap = new HashMap<>();
-                //获取交易回执，交易回执返回的顺序其实和交易的顺序一致
-                String body = AlchemyUtils.alchemygetTransactionReceipts(blockNumber);
-                Map<String, Object> resultMap = JsonUtil.string2Obj(body);
-                Map result = (Map) resultMap.get("result");
-                Set<String> tokenIds = new HashSet<>();
-                if(result.containsKey("receipts")){
-                    List<Map> receipts = (List<Map>) result.get("receipts");
-                    //                JSON.parseArray(JSON.toJSONString(receipts), EthTxnReceiptDTO.class);
-                    for(Map m:receipts){
-                        EthTxnReceiptDTO receipt = JsonUtil.mapToBean(m, new EthTxnReceiptDTO());
-                        List<Map> logs = (List<Map>) m.get("logs");
-                        String contractAddress = receipt.getContractAddress();
-                        for(Map l:logs){
-                            String address = (String) l.get("address");//有关ENS的合约要靠事件调用来找到
-                            if(AlchemyUtils.ENSCONSTRACTADDRESS.equalsIgnoreCase(address)){//如果是ENS合约
-                                List<String> topics = (List<String>) l.get("topics");
-                                String topic0 = topics.get(0);//topic0就是函数名
-                                if(EthEventTopicConst.TRANSFER_EVENT_TOPIC.equals(topic0)){//tokenId在topic[3]
-                                    String from = topics.get(1).replace("0x000000000000000000000000","0x");
-                                    String to =  topics.get(2).replace("0x000000000000000000000000","0x");
-                                    String tokenId = topics.get(3);
-                                    log.info("from:"+from);
-                                    log.info("to:"+to);
-                                    log.info("tokenId:"+tokenId);
-                                    log.info("TransactionHash:"+receipt.getTransactionHash());
+            //筛选区块，如果已经处理过了，那么就不再处理
+            filterBlockNumer(blockNumber, taskType);
+            //初步处理交易信息
+            HashMap<String, EthEnsDTO> ensMap = new HashMap<>();
+            //获取交易回执，交易回执返回的顺序其实和交易的顺序一致
+            String body = AlchemyUtils.alchemygetTransactionReceipts(blockNumber);
+            Map<String, Object> resultMap = JsonUtil.string2Obj(body);
+            Map result = (Map) resultMap.get("result");
+            Set<String> tokenIds = new HashSet<>();
+            if(result.containsKey("receipts")){
+                List<Map> receipts = (List<Map>) result.get("receipts");
+                //                JSON.parseArray(JSON.toJSONString(receipts), EthTxnReceiptDTO.class);
+                for(Map m:receipts){
+                    EthTxnReceiptDTO receipt = JsonUtil.mapToBean(m, new EthTxnReceiptDTO());
+                    List<Map> logs = (List<Map>) m.get("logs");
+                    String contractAddress = receipt.getContractAddress();
+                    for(Map l:logs){
+                        String address = (String) l.get("address");//有关ENS的合约要靠事件调用来找到
+                        if(AlchemyUtils.ENSCONSTRACTADDRESS.equalsIgnoreCase(address)){//如果是ENS合约
+                            List<String> topics = (List<String>) l.get("topics");
+                            String topic0 = topics.get(0);//topic0就是函数名
+                            if(EthEventTopicConst.TRANSFER_EVENT_TOPIC.equals(topic0)){//tokenId在topic[3]
+                                String from = topics.get(1).replace("0x000000000000000000000000","0x");
+                                String to =  topics.get(2).replace("0x000000000000000000000000","0x");
+                                String tokenId = topics.get(3);
+                                log.info("from:"+from);
+                                log.info("to:"+to);
+                                log.info("tokenId:"+tokenId);
+                                log.info("TransactionHash:"+receipt.getTransactionHash());
 //                                    String nftMetadata = AlchemyUtils.getNFTMetadata(address, tokenId);
-                                    tokenIds.add(tokenId);
-                                    EthEnsDTO ethEnsDTO;
-                                    if(ensMap.containsKey(tokenId)){
-                                        ethEnsDTO = ensMap.get(tokenId);
-                                    }else{
-                                        ethEnsDTO = new EthEnsDTO();
+                                tokenIds.add(tokenId);
+                                EthEnsDTO ethEnsDTO;
+                                if(ensMap.containsKey(tokenId)){
+                                    ethEnsDTO = ensMap.get(tokenId);
+                                }else{
+                                    ethEnsDTO = new EthEnsDTO();
 //                                        ethEnsDTO.setMeta(nftMetadata);
-                                        ethEnsDTO.setTokenId(tokenId);
-                                        ethEnsDTO.setAddress(address);
-                                        ensMap.put(tokenId, ethEnsDTO);
-                                    }
-                                    ethEnsDTO.setFrom(from);
-                                    ethEnsDTO.setTo(to);
+                                    ethEnsDTO.setTokenId(tokenId);
+                                    ethEnsDTO.setAddress(address);
+                                    ensMap.put(tokenId, ethEnsDTO);
                                 }
+                                ethEnsDTO.setFrom(from);
+                                ethEnsDTO.setTo(to);
                             }
                         }
                     }
                 }
-                Map<String, Map> metaMap = getMetaMap(tokenIds);
-                Iterator<Map.Entry<String, EthEnsDTO>> iterator = ensMap.entrySet().iterator();
-                List<EthEnsDTO> valueList = new ArrayList<>();
-                while(iterator.hasNext()){
-                    Map.Entry<String, EthEnsDTO> next = iterator.next();
-                    EthEnsDTO value = next.getValue();
-                    Map map = metaMap.get(value.getTokenId());
-                    value.setMeta(map);
-                    valueList.add(value);
-                }
-                ethEnsInfoService.batchInsertOrUpdateEns(valueList);
             }
+            Map<String, Map> metaMap = getMetaMap(tokenIds);
+            Iterator<Map.Entry<String, EthEnsDTO>> iterator = ensMap.entrySet().iterator();
+            List<EthEnsDTO> valueList = new ArrayList<>();
+            while(iterator.hasNext()){
+                Map.Entry<String, EthEnsDTO> next = iterator.next();
+                EthEnsDTO value = next.getValue();
+                Map map = metaMap.get(value.getTokenId());
+                value.setMeta(map);
+                valueList.add(value);
+            }
+            ethEnsInfoService.batchInsertOrUpdateEns(valueList);
+            Long costTime = new Date().getTime() - beginTime.getTime();
+            String message = "etlEthBlock"+blockNumber.toString()+"消耗时间:"+(costTime+"ms");
+            log.info(message);
+            sysMessageService.addSysMessage(taskType, message, blockNumber, costTime);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            if(retry < 3){//重试三次
-                retry ++;
+            if(++retry < 3){//重试三次
                 etlEns(blockNumber, retry);
                 return;
             }else{
@@ -535,13 +484,9 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                 if(e.getMessage().length() > 300){
                     message = message.substring(0, 300);
                 }
-                sysErrorMessageService.addSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK, message, blockNumber);
+                sysErrorMessageService.addSysErrorMessage(taskType, message, blockNumber);
             }
         } finally {
-            Long costTime = new Date().getTime() - beginTime.getTime();
-            String message = "etlEthBlock"+blockNumber.toString()+"消耗时间:"+(costTime+"ms");
-            log.info(message);
-            sysMessageService.addSysMessage(SysMessageModel.TYPE_ETHTASK, message, blockNumber, costTime);
         }
     }
 
