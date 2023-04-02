@@ -12,7 +12,7 @@ import java.util.Date;
 
 
 @Repository
-public interface EthEventTransferDao extends JpaRepository<EthEventTransferModel,String> , BatchSaveRepository<EthEventTransferModel> {
+public interface EthEventTransferDao extends JpaRepository<EthEventTransferModel,String> , BatchSaveRepository<EthEventTransferModel>,EthEventTransferDao2 {
     @Query(value="select u from EthEventTransferModel u where u.tokenAddress = ?1 and u.timestamp >= ?2 and u.timestamp < ?3")
     Page<EthEventTransferModel> listTransferByAddressAndTime(String address, Date startTime, Date endTime, Pageable pageable);
 

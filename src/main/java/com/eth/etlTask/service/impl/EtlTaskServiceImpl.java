@@ -8,10 +8,10 @@ import com.eth.ens.model.EthEnsInfoModel;
 import com.eth.ens.service.IEthEnsInfoService;
 import com.eth.etlTask.service.IEtlTaskService;
 import com.eth.event.model.EthEventTransferModel;
-import com.eth.event.model.TransferConst;
 import com.eth.event.service.IEthEventTransferService;
 import com.eth.framework.base.common.utils.AlchemyUtils;
 import com.eth.framework.base.common.utils.JsonUtil;
+import com.eth.framework.base.sysMessage.model.MessageConst;
 import com.eth.framework.base.sysMessage.model.SysErrorMessageModel;
 import com.eth.framework.base.sysMessage.model.SysMessageModel;
 import com.eth.framework.base.sysMessage.service.ISysErrorMessageService;
@@ -21,6 +21,7 @@ import com.eth.transaction.model.EthTxnModel;
 import com.eth.transaction.model.EthTxnReceiptDTO;
 import com.eth.transaction.service.IEthTxnService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.utils.Numeric;
@@ -51,7 +52,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
     @Resource
     IEthEventTransferService ethEventTransferService;
 
-    ExecutorService threadPool= Executors.newFixedThreadPool(20);
+    ExecutorService threadPool= Executors.newFixedThreadPool(30);
 
 
 
@@ -72,7 +73,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
     @Override
     public void etlCommonBlock(List<Long> blockNumberList, Integer retry, boolean filterNumber) {
         Date beginTime = new Date();
-        String taskType = SysMessageModel.TYPE_COMTASK;
+        String taskType = MessageConst.TYPE_COMTASK;
         try {
             log.info("ethCommonBlock:retry:{}, filterNumber:{}, blockNumberList:{}", retry, filterNumber,blockNumberList.toString());
             if(filterNumber){
@@ -128,13 +129,13 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                         String contractAddress = receipt.getContractAddress();
                         //获取事件日志，通过事件日志获得transfer交易信息
                         for(Map l:logs){
-                            log.info(JsonUtil.object2String(l));
+//                            log.info(JsonUtil.object2String(l));
                             String address = (String) l.get("address");//有关ENS的合约要靠事件调用来找到
                             List<String> topics = (List<String>) l.get("topics");
                             String topic0 = topics.get(0);//topic0就是函数名
                             if(EthEventTopicConst.TRANSFER_EVENT_TOPIC.equals(topic0)){//tokenId在topic[3]
                                 //处理交易函数
-                                dealTransferEvent(transferList, blockNumberStr, blockNumber, transactionHash, type, txn, l, address, topics, topic0);
+                                dealTransferEvent(transferList, blockNumber, transactionHash, type, txn, l, address, topics, topic0);
                             }else if(EthEventTopicConst.TRANSFER_EVENT_SGINGLE_TOPIC.equals(topic0)){
                                 //处理单个交易（erc1155）
                                 dealTransferSingleEvent(transferList, blockNumber, transactionHash, type, txn, l, address, topics);
@@ -146,8 +147,8 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                     }
                 }
                 Date beginTime1 = new Date();
-                //批量新增交易信息
-                ethTxnService.batchInsertTransaction(transactionMap);
+                //批量新增交易信息,交易信息太多，暂时不处理
+//                ethTxnService.batchInsertTransaction(transactionMap);
                 ethEventTransferService.addBatchEventTransfer(transferList);
                 log.info("batchInsertTransaction-costTime:{}ms",new Date().getTime() - beginTime1.getTime());
             }
@@ -194,64 +195,12 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
      * @param address
      * @param topics
      */
-    private static void dealTransferBatchEvent(List<EthEventTransferModel> transferList, BigInteger blockNumber, String transactionHash, String type, EthTxnModel txn, Map l, String address, List<String> topics) {
-        String operator= topics.get(1).replace("0x000000000000000000000000","0x");
-        String from = topics.get(2).replace("0x000000000000000000000000","0x");
-        String to =  topics.get(3).replace("0x000000000000000000000000","0x");
-        String data = (String) l.get("data");
-        //$tokens = [];
-        //        $str = substr($str,194,strlen($str));
-        //        $count = (strlen($str) / 64 - 1) / 2;
-        //        for($i=0;$i<$count;$i++){
-        //            $tokens[$i] = ["tokenId"=>self::toInt("0x".substr($str,$i*64,64))];
-        //        }
-        //        $str = substr($str,64*$count+64);
-        //        for($i=0;$i<$count;$i++){
-        //            $tokens[$i]["tokenNum"] = self::toInt("0x".substr($str,$i*64,64));
-        //        }
-        data = data.substring(194);
-        int count = (data.length() / 64 - 1) / 2;
-        String[] tokenIdArr = new String[count];
-        BigInteger[] tokenNumArr = new BigInteger[count];
-        for(int i = 0;i<count;i++){
-            tokenIdArr[i] = "0x" + data.substring(i*64,i*64+64);
-        }
-        data = data.substring(64*count+64);
-        for(int i = 0;i<count;i++){
-            String tokenNumHex = ("0x" + data.substring(i*64,i*64+64)).replaceAll("0x[0]*", "0x");
-            tokenNumArr[i] = Numeric.decodeQuantity(tokenNumHex);
-        }
-        String logIndexStr = (String) l.get("logIndex");
-        BigInteger logIndex = Numeric.decodeQuantity(logIndexStr);
-        Boolean removed = (Boolean) l.get("removed");
-//        String methed_id = topic0.substring(0, 10);
-        for(int i = 0;i<count;i++){
-            String tokenId = tokenIdArr[i];
-            BigInteger tokenNum = tokenNumArr[i];
-            EthEventTransferModel transfer = new EthEventTransferModel();
-            transfer.setId(blockNumber +"-"+logIndex + "-"+i);
-            setTransferInfo(blockNumber, transactionHash, type, txn, address, from, to, logIndex, removed, tokenId, tokenNum, transfer);
-            transfer.setOperator(operator);
-            transfer.setMethodType(TransferConst.TRANSFER_BATCH);
-            transferList.add(transfer);
-        }
+    private void dealTransferBatchEvent(List<EthEventTransferModel> transferList, BigInteger blockNumber, String transactionHash, String type, EthTxnModel txn, Map l, String address, List<String> topics) {
+        List<EthEventTransferModel> templateList = ethEventTransferService.getBatchEthEventTransferModels(blockNumber, transactionHash, type, txn.getTimestamp(), l, address, topics);
+        transferList.addAll(templateList);
     }
 
-    private static void setTransferInfo(BigInteger blockNumber, String transactionHash, String type, EthTxnModel txn, String address, String from, String to, BigInteger logIndex, Boolean removed, String tokenId, BigInteger tokenNum, EthEventTransferModel transfer) {
-        transfer.setBlockNumber(blockNumber.longValue());
-        transfer.setLogIndex(logIndex.intValue());
-        transfer.setTxnHash(transactionHash);
-        transfer.setRemoved(removed?1:0);
-        transfer.setType(type);
-        transfer.setTimestamp(txn.getTimestamp());
-        transfer.setTokenAddress(address);
-        transfer.setFromAddress(from);
-        transfer.setToAddress(to);
-        transfer.setTokenId(tokenId);
-        transfer.setTokenValue(tokenNum);
-        transfer.setCreatedAt(new Date());
-        transfer.setUpdatedAt(new Date());
-    }
+
 
     /**
      * 处理单个交易事件（erc1155）
@@ -264,30 +213,15 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
      * @param address
      * @param topics
      */
-    private static void dealTransferSingleEvent(List<EthEventTransferModel> transferList, BigInteger blockNumber, String transactionHash, String type, EthTxnModel txn, Map l, String address, List<String> topics) {
-        String operator= topics.get(1).replace("0x000000000000000000000000","0x");
-        String from = topics.get(2).replace("0x000000000000000000000000","0x");
-        String to =  topics.get(3).replace("0x000000000000000000000000","0x");
-        String data = (String) l.get("data");
-        String tokenId = data.substring(0, 66);
-        String tokenNumHex = ("0x" + data.substring(66, 130)).replaceAll("0x[0]*", "0x");
-        BigInteger tokenNum = Numeric.decodeQuantity(tokenNumHex);
-        String logIndexStr = (String) l.get("logIndex");
-        BigInteger logIndex = Numeric.decodeQuantity(logIndexStr);
-        Boolean removed = (Boolean) l.get("removed");
-//        String methed_id = topic0.substring(0, 10);
-        EthEventTransferModel transfer = new EthEventTransferModel();
-        transfer.setId(blockNumber +"-"+logIndex);
-        setTransferInfo(blockNumber, transactionHash, type, txn, address, from, to, logIndex, removed, tokenId, tokenNum, transfer);
-        transfer.setOperator(operator);
-        transfer.setMethodType(TransferConst.TRANSFER_SINGLE);
+    private void dealTransferSingleEvent(List<EthEventTransferModel> transferList, BigInteger blockNumber, String transactionHash, String type, EthTxnModel txn, Map l, String address, List<String> topics) {
+        EthEventTransferModel transfer = ethEventTransferService.getSingleEthEventTransferModel(blockNumber, transactionHash, type, txn.getTimestamp(), l, address, topics);
         transferList.add(transfer);
     }
+
 
     /**
      * 处理一般交易事件
      * @param transferList
-     * @param blockNumberStr
      * @param blockNumber
      * @param transactionHash
      * @param type
@@ -297,44 +231,12 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
      * @param topics
      * @param topic0
      */
-    private static void dealTransferEvent(List<EthEventTransferModel> transferList, String blockNumberStr, BigInteger blockNumber, String transactionHash, String type, EthTxnModel txn, Map l, String address, List<String> topics, String topic0) {
-        String data;
-        String from;
-        String to;
-        if(topics.size() == 1){//有的消息的from和to数据都在data里
-            //0x0000000000000000000000009c6e6e963460cc027a33744248a177727900a4b8000000000000000000000000b1690c08e213a35ed9bab7b318de14420fb57d8c00000000000000000000000000000000000000000000000000000000000f41fb
-            data = (String) l.get("data");
-            from = "0x"+data.substring(26, 66);
-            to = "0x"+data.substring(90, 130);
-            data = "0x"+data.substring(130);
-        }else if(topics.size() == 3){//from和to在topic里
-            data = (String) l.get("data");
-            from = topics.get(1).replace("0x000000000000000000000000","0x");
-            to =  topics.get(2).replace("0x000000000000000000000000","0x");
-        }else{//from和to和data都在topic里，ens就是这样
-            from = topics.get(1).replace("0x000000000000000000000000","0x");
-            to =  topics.get(2).replace("0x000000000000000000000000","0x");
-            data = topics.get(3);
-        }
-        String valueStr;
-        valueStr = data.replaceAll("0x[0]*", "0x");
-        if("0x".equals(valueStr)){
-            valueStr = "0x0";
-        }
-        BigInteger value = Numeric.decodeQuantity(valueStr);
-//                                String tokenId = topics.get(3);
-//                                log.info("from:"+from);
-//                                log.info("to:"+to);
-//                                log.info("tokenId:"+tokenId);
-//                                log.info("TransactionHash:"+txn.getTxnHash());
+    private void dealTransferEvent(List<EthEventTransferModel> transferList, BigInteger blockNumber, String transactionHash, String type, EthTxnModel txn, Map l, String address, List<String> topics, String topic0) {
+        String data = (String) l.get("data");
         String logIndexStr = (String) l.get("logIndex");
-        BigInteger logIndex = Numeric.decodeQuantity(logIndexStr);
         Boolean removed = (Boolean) l.get("removed");
-//        String methed_id = topic0.substring(0, 10);
-        EthEventTransferModel transfer = new EthEventTransferModel();
-        transfer.setId(blockNumber +"-"+logIndex);
-        setTransferInfo(blockNumber, transactionHash, type, txn, address, from, to, logIndex, removed, valueStr, value, transfer);
-        transfer.setMethodType(TransferConst.TRANSFER);
+        BigInteger logIndex = Numeric.decodeQuantity(logIndexStr);
+        EthEventTransferModel transfer = ethEventTransferService.getEthEventTransferModel(blockNumber, transactionHash, type, txn.getTimestamp(), data, logIndex, removed, address, topics);
         transferList.add(transfer);
     }
 
@@ -352,6 +254,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
             }
         });
     }
+
     /**
      * 解析某一高度的区块链数据
      * @param blockNumber
@@ -379,17 +282,31 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
      * @throws Exception
      */
     @Override
-    public void etlCommonBlock(Long startBlockNumber, Long endBlockNumber, Integer batchNum) throws Exception {
+    @Async
+    public void etlCommonBlockAsync(Long startBlockNumber, Long endBlockNumber, Integer batchNum, boolean filterNumber) throws Exception {
+        etlCommonBlock(startBlockNumber, endBlockNumber, batchNum, filterNumber);
+    }
+    /**
+     * 解析某一高度的区块链数据
+     * @param startBlockNumber
+     * @param endBlockNumber
+     * @throws Exception
+     */
+    @Override
+    public void etlCommonBlock(Long startBlockNumber, Long endBlockNumber, Integer batchNum, boolean filterNumber) throws Exception {
         log.info("startNumber:{},endNumer:{}", startBlockNumber, endBlockNumber);
         CountDownLatch latch = new CountDownLatch((int)(endBlockNumber - startBlockNumber + 1));
         Semaphore lock = new Semaphore(20);
         for(long i = startBlockNumber;i<=endBlockNumber;i+=batchNum){
-            long end = i + batchNum;
+            long end = i + batchNum - 1;
+            if(end > endBlockNumber){
+                end = endBlockNumber;
+            }
             List<Long> blockNumberList = new ArrayList<>();
-            for(long j=i;j<end&&j<=endBlockNumber;j++){
+            for(long j=i;j<=end;j++){
                 blockNumberList.add(j);
             }
-            etlCommonBlock(blockNumberList, 0, false, latch, lock);
+            etlCommonBlock(blockNumberList, 0, filterNumber, latch, lock);
         }
     }
     /**
@@ -409,7 +326,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
     @Override
     public void etlEns(List<Long> blockNumber, Integer retry) {
         Date beginTime = new Date();
-        String taskType = SysMessageModel.TYPE_ETHTASK;
+        String taskType = MessageConst.TYPE_ETHTASK;
         try {
             //筛选区块，如果已经处理过了，那么就不再处理
             filterBlockNumer(blockNumber, taskType);
@@ -556,7 +473,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
      */
     @Override
     public void dealErrorEth(Integer errorNum) throws Exception {
-        List<SysErrorMessageModel> errorList = sysErrorMessageService.listNotDealSysErrorMessage(SysErrorMessageModel.TYPE_ETHTASK, errorNum);
+        List<SysErrorMessageModel> errorList = sysErrorMessageService.listNotDealSysErrorMessage(MessageConst.TYPE_ETHTASK, errorNum);
         CountDownLatch latch = new CountDownLatch((int)(errorList.size()));
         List<Long> blockIds = new ArrayList<>();
         List<Long> logIds = new ArrayList<>();
@@ -573,6 +490,29 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
         }
         latch.await();
         sysErrorMessageService.dealSysErrorMessage(logIds);
+    }
+
+    @Override
+    public void dealErrorComtask(Integer errorNum) throws Exception {
+        List<SysErrorMessageModel> errorList = sysErrorMessageService.listNotDealSysErrorMessage(MessageConst.TYPE_COMTASK, errorNum);
+        CountDownLatch latch = new CountDownLatch((int)(errorList.size()));
+        List<Long> blockIds = new ArrayList<>();
+        List<Long> logIds = new ArrayList<>();
+        for(SysErrorMessageModel error:errorList){
+            blockIds.add(error.getBlockNumber());
+            logIds.add(error.getId());
+            if(blockIds.size() >= 30){
+                etlCommonBlock(blockIds, 0, false);
+                sysErrorMessageService.dealSysErrorMessage(logIds);
+                logIds = new ArrayList<>();
+                blockIds = new ArrayList<>();
+            }
+        }
+        if(!blockIds.isEmpty()){
+            etlCommonBlock(blockIds, 0, false);
+            sysErrorMessageService.dealSysErrorMessage(logIds);
+        }
+        latch.await();
     }
 
     private static HashMap<String, EthTxnModel> dealTransactionMap(EthBlock.Block block) {

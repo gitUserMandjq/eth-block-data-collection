@@ -9,8 +9,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface EthBlockDao  extends JpaRepository<EthBlockModel,Long>, BatchSaveRepository<EthBlockModel> {
-    @Query(value="select min(u.blockNumber) from EthBlockModel u")
+    @Query(value="select min(u.blockNumber) from EthBlockListenerModel u")
     Long getMinBlockNumber();
-    @Query(value="select max(u.blockNumber) from EthBlockModel u")
+    @Query(value="select max(u.blockNumber) from EthBlockListenerModel u")
     Long getMaxBlockNumber();
 }

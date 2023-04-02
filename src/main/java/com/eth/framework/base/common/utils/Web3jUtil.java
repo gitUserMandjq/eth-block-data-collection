@@ -1,13 +1,17 @@
 package com.eth.framework.base.common.utils;
 
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.ConnectionPool;
-import okhttp3.OkHttpClient;
+import okhttp3.*;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.SocketAddress;
+import java.util.Date;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -21,7 +25,7 @@ public class Web3jUtil {
     private int count;
     //炼金术的秘钥
     public static String ETH_HOST_STR = "J4ipt__b_exS1cez4CO9KhRkXEYWxUcJ,UdxThvKeKc9FbOwZZPtiWdjWs-_ex_pN,ml7esjvnZ2twDU8WenOz0U2c1iRXOyS5,K_oaFqRcqOsrpEgvdnm8RZN5-pqq04zQ,1dnGPiAwFzE35GHLaqXT1cLJtQAGjjGG,80tBHWkwsdPpnNVeDzFaIsf385mCDZuS,LRvE9ITS5Eg1w6Cngm3K8GpMAf8Tun1_";
-
+    public static String isProxy = "0";
     static {
         try {
             InputStreamReader is = new InputStreamReader(
@@ -31,6 +35,7 @@ public class Web3jUtil {
             property.load(is);
             ETH_HOST_STR = PropertiesUtils.readValue(property, "alchemy.server.apptokens1")
                 + "," + PropertiesUtils.readValue(property, "alchemy.server.apptokens2");
+            isProxy = PropertiesUtils.readValue(property, "alchemy.server.isProxy");
         } catch (IOException e) {
             log.error(e.getMessage());
             e.printStackTrace();
@@ -85,5 +90,50 @@ public class Web3jUtil {
     public Web3j getWeb3j(){
         int index = new Random().nextInt(count);
         return web3jList[index];
+    }
+    public enum Closest{
+        BEFORE("before"),AFTER("after");
+        private String code;
+
+        Closest(String code) {
+            this.code = code;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public void setCode(String code) {
+            this.code = code;
+        }
+    }
+    public static Long getBlockNumberByDate(Date date, Closest closest) throws Exception {
+        long timeInMillis = date.getTime()/1000L;
+        HttpUrl.Builder urlBuilder = HttpUrl.parse("https://api.etherscan.io/api").newBuilder();
+        urlBuilder.addQueryParameter("module", "block");
+        urlBuilder.addQueryParameter("action", "getblocknobytime");
+        urlBuilder.addQueryParameter("timestamp", StringUtils.valueOf(timeInMillis));
+        urlBuilder.addQueryParameter("closest", closest.getCode());//before,after
+        urlBuilder.addQueryParameter("apikey", "1DJR9CXZM29FBPBCDTQJGGADRC3343WBF2");
+// 构建HTTP请求
+        String url = urlBuilder.build().toString();
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        // 设置代理地址
+        if("1".equals(isProxy)){
+            SocketAddress sa = new InetSocketAddress("127.0.0.1", 7890);
+            builder.proxy(new Proxy(Proxy.Type.HTTP, sa));
+        }
+        OkHttpClient client = builder.build();
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+        String result;
+// 发送HTTP请求并解析响应
+        try (Response response = client.newCall(request).execute()) {
+            String responseBody = response.body().string();
+            Map map = JsonUtil.string2Obj(responseBody);
+            result = (String) map.get("result");
+        }
+        return NumberUtils.longValueOf(result);
     }
 }

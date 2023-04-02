@@ -55,6 +55,11 @@ public class WebApiBaseResult {
         WebApiBaseResult result = new WebApiBaseResult();
         return result;
     }
+    public static WebApiBaseResult success(Object data) {
+        WebApiBaseResult result = new WebApiBaseResult();
+        result.setData(data);
+        return result;
+    }
 
 
     //新加总线的id

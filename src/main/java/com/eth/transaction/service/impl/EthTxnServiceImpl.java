@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -26,6 +27,13 @@ public class EthTxnServiceImpl implements IEthTxnService {
         ethTxnDao.batchIgnoreSave(values,500);
 //       ethTxnDao.batchInsertTxn(list);
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchInsertTransaction(List<EthTxnModel> list) throws Exception {
+        ethTxnDao.batchIgnoreSave(list,500);
+    }
+
     /**
      * 批量插入交易列表
      * @param list

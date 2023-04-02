@@ -1,6 +1,5 @@
 package com.eth.transaction.service;
 
-import com.eth.transaction.model.EthTxnEnsModel;
 import com.eth.transaction.model.EthTxnModel;
 
 import java.util.List;
@@ -13,6 +12,12 @@ public interface IEthTxnService {
      * @throws Exception
      */
     void batchInsertTransaction(Map<String, EthTxnModel> list) throws Exception;
+    /**
+     * 批量插入交易列表
+     * @param list
+     * @throws Exception
+     */
+    void batchInsertTransaction(List<EthTxnModel> list) throws Exception;
     /**
      * 批量插入交易列表
      * @param list

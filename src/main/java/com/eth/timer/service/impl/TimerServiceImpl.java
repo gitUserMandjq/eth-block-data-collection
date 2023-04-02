@@ -3,7 +3,7 @@ package com.eth.timer.service.impl;
 import com.eth.block.service.IEthBlockService;
 import com.eth.ens.model.EthEnsInfoModel;
 import com.eth.etlTask.service.IEtlTaskService;
-import com.eth.framework.base.sysMessage.model.SysErrorMessageModel;
+import com.eth.framework.base.sysMessage.model.MessageConst;
 import com.eth.framework.base.sysMessage.service.ISysMessageService;
 import com.eth.timer.service.ITimerService;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +33,7 @@ public class TimerServiceImpl implements ITimerService {
     }
 
     private Long getStartBlockNumber() {
-        Long start = sysMessageService.getMaxBlockNumber(SysErrorMessageModel.TYPE_ETHTASK);
+        Long start = sysMessageService.getMaxBlockNumber(MessageConst.TYPE_ETHTASK);
         if(start == null){
             start = EthEnsInfoModel.createBlockHeight;
         }else{

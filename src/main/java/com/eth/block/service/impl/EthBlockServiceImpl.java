@@ -87,7 +87,7 @@ public class EthBlockServiceImpl implements IEthBlockService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void insertBatchEthBlock(Iterable<EthBlockModel> ethBlockModel)throws Exception{
-        ethBlockDao.batchIgnoreSave(ethBlockModel, 500);
+        ethBlockDao.batchReplace(ethBlockModel, 500);
     }
     /**
      * 新增或者更新区块链

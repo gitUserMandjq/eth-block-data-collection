@@ -15,24 +15,41 @@ import java.util.Date;
 @Data
 public class EthBlockModel {
     @Id
+    @Column(name="id")
     private Long id;//主键id
+    @Column(name="block_number")
     private Long blockNumber;//区块高度
+    @Column(name="block_hash")
     private String blockHash;//区块hash
+    @Column(name="parent_hash")
     private String parentHash;//父块hash
+    @Column(name="miner")
     private String miner;//挖矿账号
+    @Column(name="difficulty")
     private String difficulty;//区块难度
+    @Column(name="total_difficulty")
     private String totalDifficulty;//总体挖矿难度
+    @Column(name="block_size")
     private String blockSize;//交易容量
+    @Column(name="nonce")
     private String nonce;//区块随机数
+    @Column(name="extra_data")
     private String extraData;//挖矿额外信息
+    @Column(name="gas_limit")
     private String gasLimit;//区块GAS限制
+    @Column(name="gas_used")
     private String gasUsed;//区块已消耗GAS
+    @Column(name="timestamp")
     private Date timestamp;//区块产出时间
+    @Column(name="txn_count")
     private Integer txnCount;//交易容量
+    @Column(name="base_fee_per_gas")
     private String baseFeePerGas;//基础GAS费（销毁ETH）
+    @Column(name="burnt_fee")
     private String burntFee;//销毁ETH
-    @Column(updatable = false)
+    @Column(name="created_at")
     private Date createdAt;//系统时间
+    @Column(name="updated_at")
     private Date updatedAt;//系统时间
     public EthBlockModel(EthBlock.Block block) {
         this.id = block.getNumber().longValue();

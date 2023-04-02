@@ -37,7 +37,14 @@ public interface IEtlTaskService {
      * @param endBlockNumber
      * @throws Exception
      */
-    void etlCommonBlock(Long startBlockNumber, Long endBlockNumber, Integer batchNum)throws Exception;
+    void etlCommonBlockAsync(Long startBlockNumber, Long endBlockNumber, Integer batchNum, boolean filterNumber)throws Exception;
+    /**
+     * 解析某一高度的区块链数据
+     * @param startBlockNumber
+     * @param endBlockNumber
+     * @throws Exception
+     */
+    void etlCommonBlock(Long startBlockNumber, Long endBlockNumber, Integer batchNum, boolean filterNumber)throws Exception;
     /**
      * 解析某一高度的ens数据
      * @param blockNumber
@@ -75,4 +82,9 @@ public interface IEtlTaskService {
      * @throws Exception
      */
     void dealErrorEth(Integer errorNum)throws Exception;
+    /**
+     * 处理异常交易数据
+     * @throws Exception
+     */
+    void dealErrorComtask(Integer errorNum)throws Exception;
 }

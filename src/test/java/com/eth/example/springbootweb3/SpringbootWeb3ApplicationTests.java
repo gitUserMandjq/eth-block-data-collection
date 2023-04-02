@@ -1,6 +1,7 @@
 package com.eth.example.springbootweb3;
 
 import com.eth.SpringbootWeb3Application;
+import com.eth.account.service.IAccountService;
 import com.eth.block.dao.EthBlockDao;
 import com.eth.block.service.IEthBlockService;
 import com.eth.ens.dao.EthEnsInfoDao;
@@ -29,6 +30,8 @@ class SpringbootWeb3ApplicationTests {
   EthEnsInfoDao ethEnsInfoDao;
   @Resource
   ITimerService timerService;
+  @Resource
+  IAccountService accountService;
 //  @Autowired
 //  private Web3j web3j;
   @Test
@@ -40,7 +43,8 @@ class SpringbootWeb3ApplicationTests {
     Long high = 16727705L;
 //    Long start = 9380422L;
     //2022-8-1
-    Long start = 15251202L;
+
+    Long start = 15490980L;
 //    Long start = 14669839L;
 //    Long high = start + 5000L;
     Integer batchNumber = 10;
@@ -48,13 +52,15 @@ class SpringbootWeb3ApplicationTests {
 //    ids.add(10000002L);
 //    ids.add(10000003L);
 //    ids.add(10000004L);
-    etlTaskService.etlCommonBlock(start, high, 20);
-//    etlTaskService.etlBlock(ids, 3);
+//    etlTaskService.etlCommonBlock(start, high, 20, false);
+//    etlTaskService.etlBl, falseock(ids, 3);
 //    etlTaskService.etlCommonBlock(ids, 3);
 //    timerService.dealErrorEthTask(100);
 //    timerService.dealEtlTask(20);
 //    dealEtlTask(start, high, batchNumber);
-//    etlTaskService.dealErrorEth();
+    for(int i=0;i<10;i++){
+      etlTaskService.dealErrorComtask(100);
+    }
   }
 
   private void dealEtlTask(Long start, Long high, Integer batchNumber) throws InterruptedException {
