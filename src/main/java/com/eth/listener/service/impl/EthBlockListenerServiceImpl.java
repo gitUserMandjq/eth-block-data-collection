@@ -1,5 +1,6 @@
 package com.eth.listener.service.impl;
 
+import com.eth.account.service.IAccountService;
 import com.eth.block.service.IEthBlockService;
 import com.eth.event.model.EthEventTransferModel;
 import com.eth.event.model.EthEventTransferSmartModel;
@@ -37,6 +38,8 @@ public class EthBlockListenerServiceImpl implements IEthBlockListenerService {
     IEthBlockService ethBlockService;
     @Resource
     IEthEventTransferService ethEventTransferService;
+    @Resource
+    IAccountService accountService;
     private static final Map<String, Disposable> listenerMap = new HashMap<>();
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -82,19 +85,38 @@ public class EthBlockListenerServiceImpl implements IEthBlockListenerService {
                 Disposable subscribe = web3j.ethLogFlowable(ethFilter).takeWhile(log -> true).subscribe(log -> {
                     // Process the event
                     List<String> topics = log.getTopics();
-                    BigInteger blockNumber = log.getBlockNumber();
-                    String transactionHash = log.getTransactionHash();
-                    String type = log.getType();
-                    String address = log.getAddress();
-                    Date timestamp = new Date();//没有时间，得从区块信息里取,暂时使用当前时间
-                    BigInteger logIndex = log.getLogIndex();
-                    Boolean removed = false;
+                    String from;
+                    String to;
                     String data = log.getData();
-                    // 在这里处理每个事件日志
-                    EthEventTransferModel transfer = ethEventTransferService.getEthEventTransferModel(blockNumber, transactionHash, type, timestamp, data, logIndex, removed, address, topics);
-                    EthEventTransferSmartModel smart = new EthEventTransferSmartModel(transfer);
-                    //新增聪明钱包交易记录
-                    ethEventTransferService.addEventTransferSmart(smart);
+                    String address = log.getAddress();
+                    if(topics.size() == 1){//有的消息的from和to数据都在data里
+                        //0x0000000000000000000000009c6e6e963460cc027a33744248a177727900a4b8000000000000000000000000b1690c08e213a35ed9bab7b318de14420fb57d8c00000000000000000000000000000000000000000000000000000000000f41fb
+                        from = "0x"+data.substring(26, 66);
+                        to = "0x"+data.substring(90, 130);
+                        data = "0x"+data.substring(130);
+                    }else if(topics.size() == 3){//from和to在topic里
+                        from = topics.get(1).replace("0x000000000000000000000000","0x");
+                        to =  topics.get(2).replace("0x000000000000000000000000","0x");
+                    }else{//from和to和data都在topic里，ens就是这样
+                        from = topics.get(1).replace("0x000000000000000000000000","0x");
+                        to =  topics.get(2).replace("0x000000000000000000000000","0x");
+                        data = topics.get(3);
+                    }
+                    //查询监听的聪明钱包
+                    Set<String> smartContractByTokenAddress = accountService.getSmartContractByTokenAddress(address);
+                    if(smartContractByTokenAddress.contains(from) || smartContractByTokenAddress.contains(to)){
+                        BigInteger blockNumber = log.getBlockNumber();
+                        String transactionHash = log.getTransactionHash();
+                        String type = log.getType();
+                        Date timestamp = new Date();//没有时间，得从区块信息里取,暂时使用当前时间
+                        BigInteger logIndex = log.getLogIndex();
+                        Boolean removed = false;
+                        // 在这里处理每个事件日志
+                        EthEventTransferModel transfer = ethEventTransferService.getEthEventTransferModel(from, to, blockNumber, transactionHash, type, timestamp, data, logIndex, removed, address, topics);
+                        EthEventTransferSmartModel smart = new EthEventTransferSmartModel(transfer);
+                        //新增聪明钱包交易记录
+                        ethEventTransferService.addEventTransferSmart(smart);
+                    }
                 });
                 listenerMap.put(listener.getId(), subscribe);
             }

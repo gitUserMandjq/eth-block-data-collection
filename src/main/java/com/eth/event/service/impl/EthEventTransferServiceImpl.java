@@ -120,6 +120,12 @@ public class EthEventTransferServiceImpl implements IEthEventTransferService {
             to =  topics.get(2).replace("0x000000000000000000000000","0x");
             data = topics.get(3);
         }
+        return getEthEventTransferModel(from, to, blockNumber, transactionHash, type,timestamp,data,logIndex,removed,address,topics);
+    }
+
+    @Override
+    public EthEventTransferModel getEthEventTransferModel(String from, String to, BigInteger blockNumber, String transactionHash, String type, Date timestamp, String data, BigInteger logIndex, Boolean removed, String address, List<String> topics) {
+
         String valueStr;
         valueStr = dealHex(data);
         if("0x".equals(valueStr)){

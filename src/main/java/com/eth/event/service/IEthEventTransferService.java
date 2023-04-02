@@ -37,6 +37,8 @@ public interface IEthEventTransferService {
 
     EthEventTransferModel getEthEventTransferModel(BigInteger blockNumber, String transactionHash, String type, Date timestamp, String data, BigInteger logIndex, Boolean removed, String address, List<String> topics);
 
+    EthEventTransferModel getEthEventTransferModel(String from, String to, BigInteger blockNumber, String transactionHash, String type, Date timestamp, String data, BigInteger logIndex, Boolean removed, String address, List<String> topics);
+
     EthEventTransferModel getSingleEthEventTransferModel(BigInteger blockNumber, String transactionHash, String type, Date timestamp, Map l, String address, List<String> topics);
 
     List<EthEventTransferModel> getBatchEthEventTransferModels(BigInteger blockNumber, String transactionHash, String type, Date timestamp, Map l, String address, List<String> topics);
