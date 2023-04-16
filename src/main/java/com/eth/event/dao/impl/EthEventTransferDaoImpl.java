@@ -11,6 +11,7 @@ import org.hibernate.type.StandardBasicTypes;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -20,14 +21,17 @@ public class EthEventTransferDaoImpl implements EthEventTransferDao2 {
 
     @Override
     public List<EthEventTransferDTO> listFromGroup(String address, List<EthEventTransferQO> qos) {
+        if(qos.isEmpty()){
+            return new ArrayList<>();
+        }
         StringBuilder strSql = new StringBuilder();
         strSql.append(" select `from`,sum(`count`) count, sum(`sum`) sum from(");
         for(int i=0;i<qos.size();i++){
             if(i > 0){
                 strSql.append(" union");
             }
-            strSql.append(" select e.from_address from,count(1) count, sum(tokenValue) sum from eth_event_transfer e" +
-                    " where e.tokenAddress = :address" +
+            strSql.append(" select e.from_address `from`,count(1) count, sum(token_value) sum from eth_event_transfer e" +
+                    " where e.token_address = :address" +
                     " and e.timestamp >= :startTime"+i+
                     " and e.timestamp < :endTime" + i +
                     " group by e.from_address");
@@ -48,14 +52,17 @@ public class EthEventTransferDaoImpl implements EthEventTransferDao2 {
     }
     @Override
     public List<EthEventTransferDTO> listToGroup(String address, List<EthEventTransferQO> qos) {
+        if(qos.isEmpty()){
+            return new ArrayList<>();
+        }
         StringBuilder strSql = new StringBuilder();
         strSql.append(" select `to`,sum(`count`) count, sum(`sum`) sum from(");
         for(int i=0;i<qos.size();i++){
             if(i > 0){
                 strSql.append(" union");
             }
-            strSql.append(" select e.to_address to,count(1) count, sum(tokenValue) sum from eth_event_transfer e" +
-                    " where e.tokenAddress = :address" +
+            strSql.append(" select e.to_address `to`,count(1) count, sum(token_value) sum from eth_event_transfer e" +
+                    " where e.token_address = :address" +
                     " and e.timestamp >= :startTime"+i+
                     " and e.timestamp < :endTime" + i +
                     " group by e.to_address");

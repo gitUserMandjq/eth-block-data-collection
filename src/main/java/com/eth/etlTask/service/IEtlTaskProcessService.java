@@ -20,4 +20,10 @@ public interface IEtlTaskProcessService {
      * @return
      */
     void processEtlTaskProcessService(EtlTaskProcessModel process) throws Exception;
+
+    /**
+     * 开始执行未完成的任务
+     * @throws Exception
+     */
+    void startEtlTaskProcessService();
 }

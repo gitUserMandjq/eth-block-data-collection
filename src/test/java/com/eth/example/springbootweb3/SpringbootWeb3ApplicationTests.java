@@ -58,9 +58,10 @@ class SpringbootWeb3ApplicationTests {
 //    timerService.dealErrorEthTask(100);
 //    timerService.dealEtlTask(20);
 //    dealEtlTask(start, high, batchNumber);
-    for(int i=0;i<10;i++){
-      etlTaskService.dealErrorComtask(100);
-    }
+    etlTaskService.etlCommonBlock(20, 10000L, false);
+//    for(int i=0;i<10;i++){
+//      etlTaskService.dealErrorComtask(100);
+//    }
   }
 
   private void dealEtlTask(Long start, Long high, Integer batchNumber) throws InterruptedException {

@@ -28,7 +28,7 @@ public class EthBlockListenerModel {
     @Column(name="contract_address")
     private String contractAddress;//监听合约地址
     @Column(name="status")
-    private String status;//状态 0停用 1启用
+    private String status = "1";//状态 0停用 1启用
     public boolean isEnable(){
         if("1".equals(status)){
             return true;

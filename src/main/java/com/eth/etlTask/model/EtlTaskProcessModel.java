@@ -9,7 +9,7 @@ import javax.persistence.Table;
 import java.util.Date;
 
 @Entity
-@Table(name = "eth_task_process")
+@Table(name = "etl_task_process")
 @Data
 public class EtlTaskProcessModel {
     @Id

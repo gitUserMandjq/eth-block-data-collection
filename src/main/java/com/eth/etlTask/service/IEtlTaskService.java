@@ -31,6 +31,9 @@ public interface IEtlTaskService {
     void etlCommonBlock(List<Long> blockNumber, Integer retry, boolean filterNumber, CountDownLatch latch, Semaphore lock);
 
 
+
+    void etlCommonBlock(Integer batchNum, Long maxBlock, boolean filterNumber) throws Exception;
+
     /**
      * 解析某一高度的区块链数据
      * @param startBlockNumber

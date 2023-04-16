@@ -35,4 +35,15 @@ public class EthEnsTaskTimerAction {
         timerService.dealEtlEnsTask(start, high, batchNumer);
         return WebApiBaseResult.success();
     }
+    @RequestMapping(value = "/dealComTask", method = RequestMethod.GET)
+    public WebApiBaseResult dealComTask(HttpSession httpSession, HttpServletRequest request
+            , @RequestParam(value = "maxBlock", required = false) Long maxBlock) throws Exception {
+        timerService.dealComTask(maxBlock);
+        return WebApiBaseResult.success();
+    }
+    @RequestMapping(value = "/dealErrorComtask", method = RequestMethod.GET)
+    public WebApiBaseResult dealErrorComtask(HttpSession httpSession, HttpServletRequest request) throws Exception {
+        timerService.dealErrorComtask();
+        return WebApiBaseResult.success();
+    }
 }

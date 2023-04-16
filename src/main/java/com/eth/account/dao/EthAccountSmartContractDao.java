@@ -16,4 +16,10 @@ public interface EthAccountSmartContractDao extends JpaRepository<EthAccountSmar
      * @return
      */
     List<EthAccountSmartContractModel> findByTokenAddress(String tokenAddress);
+    /**
+     * 根据钱包地址查询
+     * @param tokenAddress
+     * @return
+     */
+    List<EthAccountSmartContractModel> findByAddress(String tokenAddress);
 }

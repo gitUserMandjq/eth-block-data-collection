@@ -124,4 +124,9 @@ public class EthBlockServiceImpl implements IEthBlockService {
         return request.send().getBlockNumber();
     }
 
+    public static void main(String[] args) throws IOException {
+        Request<?, EthBlockNumber> request = Web3jUtil.getInstance().getWeb3j().ethBlockNumber();
+        System.out.println(request.send().getBlockNumber());
+    }
+
 }

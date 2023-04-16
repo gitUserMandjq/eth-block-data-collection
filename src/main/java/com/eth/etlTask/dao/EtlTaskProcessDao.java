@@ -35,4 +35,10 @@ public interface EtlTaskProcessDao extends JpaRepository<EtlTaskProcessModel,Lon
     @Query(value="select u from EtlTaskProcessModel u where u.type = ?1 and u.starttime = ?2 and u.endtime = ?2" +
             " order by u.endtime desc")
     List<EtlTaskProcessModel> listEtlTaskProcessEquals(String type, Date starttime, Date endtime);
+    /**
+     * 查询进行中的任务
+     * @return
+     */
+    @Query(value="select u from EtlTaskProcessModel u where u.status = '进行中'")
+    List<EtlTaskProcessModel> listEtlTaskProcessProcess();
 }

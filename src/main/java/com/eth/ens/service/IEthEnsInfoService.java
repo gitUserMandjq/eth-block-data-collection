@@ -2,7 +2,7 @@ package com.eth.ens.service;
 
 import com.eth.ens.model.EnsDomainsDTO;
 import com.eth.ens.model.EnsDomainsQO;
-import com.eth.ens.model.EthEnsDTO;
+import com.eth.ens.model.EthNftDTO;
 import com.eth.framework.base.common.model.PageData;
 import com.eth.framework.base.common.model.PageParam;
 
@@ -15,12 +15,12 @@ public interface IEthEnsInfoService {
      * 新增或更新ens
      * @param ensDTO
      */
-    void insertOrUpdateEns(EthEnsDTO ensDTO) throws IOException, ParseException;
+    void insertOrUpdateEns(EthNftDTO ensDTO) throws IOException, ParseException;
     /**
      * 新增或更新ens
      * @param ensDTOList
      */
-    void batchInsertOrUpdateEns(List<EthEnsDTO> ensDTOList) throws Exception;
+    void batchInsertOrUpdateEns(List<EthNftDTO> ensDTOList) throws Exception;
     /**
      * 查询ens列表
      * @param qo

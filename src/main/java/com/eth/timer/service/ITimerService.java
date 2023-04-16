@@ -1,6 +1,14 @@
 package com.eth.timer.service;
 
+import org.springframework.scheduling.annotation.Async;
+
 public interface ITimerService {
+
+    void dealComTask(Long maxBlock) throws Exception;
+
+    @Async
+    void dealErrorComtask() throws Exception;
+
     /**
      * 处理某个范围的区块链任务
      * @param high

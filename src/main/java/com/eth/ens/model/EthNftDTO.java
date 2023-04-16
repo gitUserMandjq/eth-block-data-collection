@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.Map;
 
 @Data
-public class EthEnsDTO {
+public class EthNftDTO {
     private String tokenId;//nft编号
     private Map meta;//nft原始信息
     private String from;//卖方

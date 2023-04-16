@@ -107,9 +107,26 @@ public class EtlTaskProcessServiceImpl implements IEtlTaskProcessService {
             changeCurrent(process, end);
             etlTaskService.etlCommonBlock(blockNumberList, 0, true, latch, lock);
         }
+        //阻塞直到任务完成
+        latch.await();
         //结束任务
         finishProcessTask(process);
         ObjectManageUtils.remove(key);
+    }
+    /**
+     * 开始执行未完成的任务
+     * @throws Exception
+     */
+    @Override
+    public void startEtlTaskProcessService() {
+        List<EtlTaskProcessModel> list = etlTaskProcessDao.listEtlTaskProcessProcess();
+        for(EtlTaskProcessModel task:list){
+            try {
+                processEtlTaskProcessService(task);
+            }catch (Exception e){
+                log.error(e.getMessage(), e);
+            }
+        }
     }
 
     private void changeCurrent(EtlTaskProcessModel process, long end) {

@@ -114,6 +114,13 @@ public class EthBlockListenerServiceImpl implements IEthBlockListenerService {
                         // 在这里处理每个事件日志
                         EthEventTransferModel transfer = ethEventTransferService.getEthEventTransferModel(from, to, blockNumber, transactionHash, type, timestamp, data, logIndex, removed, address, topics);
                         EthEventTransferSmartModel smart = new EthEventTransferSmartModel(transfer);
+                        if(smartContractByTokenAddress.contains(from)){
+                            smart.setListenAddress(from);
+                            smart.setTransType("卖出");
+                        }else{
+                            smart.setListenAddress(to);
+                            smart.setTransType("买入");
+                        }
                         //新增聪明钱包交易记录
                         ethEventTransferService.addEventTransferSmart(smart);
                     }
@@ -135,12 +142,21 @@ public class EthBlockListenerServiceImpl implements IEthBlockListenerService {
     }
 
     @Override
-    public void startInitEthListenerAll() throws IOException {
-        BigInteger currentBlockNumber = ethBlockService.getCurrentBlockNumber();
+    public void startInitEthListenerAll() {
+        BigInteger currentBlockNumber = null;
+        try {
+            currentBlockNumber = ethBlockService.getCurrentBlockNumber();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         List<EthBlockListenerModel> all = ethBlockListenerDao.findAll();
         for(EthBlockListenerModel listener:all){
             if(listener.isEnable()){
-                startEthListener(listener, currentBlockNumber);
+                try {
+                    startEthListener(listener, currentBlockNumber);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }

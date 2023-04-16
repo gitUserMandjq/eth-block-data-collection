@@ -3,10 +3,13 @@ package com.eth.timer.service.impl;
 import com.eth.block.service.IEthBlockService;
 import com.eth.ens.model.EthEnsInfoModel;
 import com.eth.etlTask.service.IEtlTaskService;
+import com.eth.framework.base.common.constant.KeyConst;
+import com.eth.framework.base.common.utils.ObjectManageUtils;
 import com.eth.framework.base.sysMessage.model.MessageConst;
 import com.eth.framework.base.sysMessage.service.ISysMessageService;
 import com.eth.timer.service.ITimerService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -26,6 +29,30 @@ public class TimerServiceImpl implements ITimerService {
     @Resource
     IEthBlockService ethBlockService;
 
+    @Override
+    @Async
+    public void dealComTask(Long maxBlock) throws Exception {
+        String key = KeyConst.TIMETASKMAP + MessageConst.TYPE_COMTASK;
+        String value = (String) ObjectManageUtils.getValue(key);
+        if("1".equals(value)){
+            return;
+        }
+        ObjectManageUtils.setValue(key, "1");
+        etlTaskService.etlCommonBlock(20, maxBlock, false);
+        ObjectManageUtils.remove(key);
+    }
+    @Override
+    @Async
+    public void dealErrorComtask() throws Exception {
+        String key = KeyConst.ERRORTIMETASKMAP + MessageConst.TYPE_COMTASK;
+        String value = (String) ObjectManageUtils.getValue(key);
+        if("1".equals(value)){
+            return;
+        }
+        ObjectManageUtils.setValue(key, "1");
+        etlTaskService.dealErrorComtask(500);
+        ObjectManageUtils.remove(key);
+    }
     @Override
     public void dealEtlEnsTask(Long high, Integer batchNumber) throws Exception {
         Long start = getStartBlockNumber();

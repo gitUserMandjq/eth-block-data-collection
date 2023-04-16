@@ -76,6 +76,9 @@ public class NumberUtils {
 		}
 		return Short.valueOf(num);
 	}
+	public static Long longValueOf(Object num) {
+		return longValueOf(StringUtils.valueOf(num));
+	}
 	public static Long longValueOf(String num) {
 		if(StringUtils.isEmpty(num)) {
 			return null;

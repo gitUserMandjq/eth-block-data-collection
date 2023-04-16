@@ -52,6 +52,9 @@ public class AlchemyUtils {
     public static String getAlchemyPath(){
         return HOST + "/v2/" + getRandomEthHost();
     }
+    public static String getGAlchemyPath(){
+        return "https://eth-mainnet.g.alchemy.com/v2/" + getRandomEthHost();
+    }
     public static String getAlchemyPath(String token){
         return HOST + "/v2/" + token;
     }
@@ -67,14 +70,14 @@ public class AlchemyUtils {
      * @return
      * @throws IOException
      */
-    public String getContractMetadata(String contractAddress) throws IOException {
+    public static String getContractMetadata(String contractAddress) throws IOException {
 //        OkHttpClient client = okHttpBuilder.build();
         {
             String body = null;
             Date beginTime = new Date();
             String url = getAlchemyPath() + "/getContractMetadata?" +
                     "contractAddress=" + contractAddress;
-            log.info("url:" + url);
+            log.debug("url:" + url);
 //            MediaType mediaType = MediaType.parse("application/json");
 //            Request request = new Request.Builder()
 //                    .url(url)
@@ -91,11 +94,11 @@ public class AlchemyUtils {
 //                body = callResponse(client, request);
                 judgeResult(body);
             } catch (Exception e) {
-                log.info("error:"+url);
+                log.debug("error:"+url);
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
             } finally {
-                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+                log.debug("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
             }
             return body;
         }
@@ -105,16 +108,16 @@ public class AlchemyUtils {
         {
             String body = null;
             Date beginTime = new Date();
-            String url = getAlchemyPath();
-            log.info("url:" + url);
-            Map<String, Object> paraData = new HashMap<>();
-            paraData.put("id", 0L);
+            String url = getGAlchemyPath();
+            log.debug("url:" + url);
+            Map<String, Object> paraData = new LinkedHashMap<>();
+            paraData.put("id", 1L);
             paraData.put("jsonrpc","2.0");
             paraData.put("method","alchemy_getTokenMetadata");
             paraData.put("params", contractAddress);
 //            MediaType mediaType = MediaType.parse("application/json");
             String requestParamStr = JsonUtil.object2String(paraData);
-            log.info("requestParam:"+requestParamStr);
+            log.debug("requestParam:"+requestParamStr);
 //            RequestBody requestBody = RequestBody.create(mediaType, requestParamStr);
 //            Request request = new Request.Builder()
 //                    .url(url)
@@ -130,14 +133,14 @@ public class AlchemyUtils {
                     }
                 }).callResponse();
 //                body = callResponse(client, request);
-                log.info("body:" + body);
+                log.debug("body:" + body);
                 judgeResult(body);
             } catch (Exception e) {
-                log.info("error:"+url);
+                log.debug("error:"+url);
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
             } finally {
-                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+                log.debug("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
             }
             return body;
         }
@@ -178,13 +181,13 @@ public class AlchemyUtils {
             String body = null;
             Date beginTime = new Date();
             String url = getAlchemyNftPath() + "/getContractMetadataBatch";
-            log.info("url:" + url);
+            log.debug("url:" + url);
             //组装请求参数
             //{"contractAddresses":["0xe785E82358879F061BC3dcAC6f0444462D4b5330","0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d"]}
 //            MediaType mediaType = MediaType.parse("application/json");
             ContractMetadataBatchParam paraMap = new ContractMetadataBatchParam(contractAddresss);
             String requestParamStr = JsonUtil.object2String(paraMap);
-            log.info("requestParam:"+requestParamStr);
+            log.debug("requestParam:"+requestParamStr);
 //            RequestBody requestBody = RequestBody.create(mediaType, requestParamStr);
 //            Request request = new Request.Builder()
 //                    .url(url)
@@ -200,14 +203,14 @@ public class AlchemyUtils {
                     }
                 }).callResponse();
 //                body = callResponse(client, request);
-                log.info("body:" + body);
+                log.debug("body:" + body);
                 judgeResult(body);
             } catch (Exception e) {
-                log.info("error:"+url);
+                log.debug("error:"+url);
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
             } finally {
-                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+                log.debug("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
             }
             return body;
 
@@ -235,7 +238,7 @@ public class AlchemyUtils {
             Date beginTime = new Date();
             String url = getAlchemyPath() + "/getNFTMetadata?" +
                     "contractAddress=" + contractAddress + "&tokenId=" + tokenId + "&refreshCache=false";
-            log.info("url:" + url);
+            log.debug("url:" + url);
 //            Request request = new Request.Builder()
 //                    .url(url)
 //                    .get()
@@ -250,14 +253,14 @@ public class AlchemyUtils {
                     }
                 }).callResponse();
 //                body = callResponse(client, request);
-                log.info("body:" + body);
+                log.debug("body:" + body);
                 judgeResult(body);
             } catch (Exception e) {
-                log.info("error:"+url);
+                log.debug("error:"+url);
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
             } finally {
-                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+                log.debug("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
             }
             return body;
 
@@ -344,7 +347,7 @@ public class AlchemyUtils {
             String body = null;
             Date beginTime = new Date();
             String url = getAlchemyNftPath() + "/getNFTMetadataBatch";
-            log.info("url:" + url);
+            log.debug("url:" + url);
             //组装请求参数
             //{
             //	"tokens": [{
@@ -360,7 +363,7 @@ public class AlchemyUtils {
                 paraMap.getTokens().add(paraMap.createToken(contractAddress, tokenId, tokenType));
             }
             String requestParamStr = JsonUtil.object2String(paraMap);
-            log.info("requestParam:"+requestParamStr);
+            log.debug("requestParam:"+requestParamStr);
 //            RequestBody requestBody = RequestBody.create(mediaType, requestParamStr);
 //            Request request = new Request.Builder()
 //                    .url(url)
@@ -376,14 +379,14 @@ public class AlchemyUtils {
                     }
                 }).callResponse();
 //                body = callResponse(client, request);
-//                log.info("body:" + body);
+//                log.debug("body:" + body);
                 judgeResult(body);
             } catch (Exception e) {
-                log.info("error:"+url);
+                log.debug("error:"+url);
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
             } finally {
-                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+                log.debug("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
             }
             return body;
 
@@ -410,7 +413,7 @@ public class AlchemyUtils {
             Date beginTime = new Date();
             String url = getAlchemyPath() + "/getNftsForContract?" +
                     "contractAddress=" + contractAddress + "&startToken=" + 0 + "&omitMetadata=false";
-            log.info("url:" + url);
+            log.debug("url:" + url);
 //            Request request = new Request.Builder()
 //                    .url(url)
 //                    .get()
@@ -425,14 +428,14 @@ public class AlchemyUtils {
                     }
                 }).callResponse();
 //                body = callResponse(client, request);
-                log.info("body:" + body);
+                log.debug("body:" + body);
                 judgeResult(body);
             } catch (Exception e) {
-                log.info("error:"+url);
+                log.debug("error:"+url);
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
             } finally {
-                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+                log.debug("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
             }
             return body;
 
@@ -446,7 +449,7 @@ public class AlchemyUtils {
      */
     private static void judgeResult(String body) throws Exception {
         if(body.startsWith("{") && body.indexOf("\"error\":") > -1){
-            log.info("返回错误信息 {}",body);
+            log.debug("返回错误信息 {}",body);
             Map<String, Object> resultMap = JsonUtil.string2Obj(body);
             Map<String, Object> error = (Map<String, Object>) resultMap.get("error");
             throw new Exception("炼金术接口报错："+ StringUtils.valueOf(error.get("code")) +StringUtils.valueOf(error.get("message")));
@@ -479,7 +482,7 @@ public class AlchemyUtils {
                 } catch (Exception e) {
                     count++;
                     Thread.sleep(1000L);
-                    log.info("retry:"+count);
+                    log.debug("retry:"+count);
                     if(count >= max){
                         throw e;
                     }
@@ -510,7 +513,7 @@ public class AlchemyUtils {
             String body = null;
             Date beginTime = new Date();
             String url = raw;
-            log.info("url:" + url);
+            log.debug("url:" + url);
 //            Request request = new Request.Builder()
 //                    .url(url)
 //                    .get()
@@ -525,13 +528,13 @@ public class AlchemyUtils {
                     }
                 }).callResponse();
 //                body = callResponse(client, request);
-                log.info("body:" + body);
+                log.debug("body:" + body);
             } catch (Exception e) {
-                log.info("error:"+url);
+                log.debug("error:"+url);
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
             } finally {
-                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+                log.debug("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
             }
             return body;
 
@@ -582,8 +585,8 @@ public class AlchemyUtils {
             }
             String data = JsonUtil.object2String(paraData);
 //            String url = getAlchemyPath();
-            log.info("url:" + url);
-            log.info("data:" + data);
+            log.debug("url:" + url);
+            log.debug("data:" + data);
 //            MediaType mediaType= MediaType.parse("application/json");
 //            RequestBody requestBody= RequestBody.create(mediaType, data);
 //            Request request = new Request.Builder()
@@ -602,13 +605,13 @@ public class AlchemyUtils {
 //                body = callResponse(client, request);
                 judgeResult(body);
             } catch (Exception e) {
-                log.info("error:"+url);
+                log.debug("error:"+url);
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
             } finally {
-                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+                log.debug("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
             }
-//            log.info("body:" + body);
+//            log.debug("body:" + body);
             return body;
         }
     }
@@ -663,8 +666,8 @@ public class AlchemyUtils {
             }
             String data = JsonUtil.object2String(paraData);
             String url = getAlchemyPath();
-            log.info("url:" + url);
-            log.info("data:" + data);
+            log.debug("url:" + url);
+            log.debug("data:" + data);
 //            MediaType mediaType= MediaType.parse("application/json");
 //            RequestBody requestBody= RequestBody.create(mediaType, data);
 //            Request request = new Request.Builder()
@@ -682,15 +685,15 @@ public class AlchemyUtils {
                 }).callResponse();
 //                body = callResponse(client, request);
                 judgeResult(body);
-                log.info(body);
+                log.debug(body);
             } catch (Exception e) {
-                log.info("error:"+url);
+                log.debug("error:"+url);
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
             } finally {
-                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+                log.debug("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
             }
-//            log.info("body:" + body);
+//            log.debug("body:" + body);
             return body;
         }
     }
@@ -721,8 +724,8 @@ public class AlchemyUtils {
                     "]" +
                     "}";
             String url = getAlchemyPath();
-            log.info("url:" + url);
-            log.info("data:" + data);
+            log.debug("url:" + url);
+            log.debug("data:" + data);
 //            MediaType mediaType= MediaType.parse("application/json");
 //            RequestBody requestBody= RequestBody.create(mediaType, data);
 //            Request request = new Request.Builder()
@@ -739,14 +742,14 @@ public class AlchemyUtils {
                     }
                 }).callResponse();
 //                body = callResponse(client, request);
-                log.info("body:" + body);
+                log.debug("body:" + body);
                 judgeResult(body);
             } catch (Exception e) {
-                log.info("error:"+url);
+                log.debug("error:"+url);
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
             } finally {
-                log.info("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
+                log.debug("costTime:"+(new Date().getTime() - beginTime.getTime())+"ms");
             }
             return body;
         }
@@ -757,7 +760,7 @@ public class AlchemyUtils {
 //        try {
 //            getContractMetadata(contractAddress);
 //        } catch (IOException e) {
-//            log.info(e.getMessage(), e);
+//            log.debug(e.getMessage(), e);
 //        }
         //一个ens交易
         //https://cn.etherscan.com/tx/0x10dd605a4a917eff0e60492dfbeed7ba47320007c77a8b1a90f899f603a1ed89
@@ -774,7 +777,7 @@ public class AlchemyUtils {
 //            tokenIds.add(tokenIdexpired);
 //            getNFTMetadataBatch(ENSCONSTRACTADDRESS, tokenIds, "ERC721");
 //        } catch (IOException e) {
-//            log.info(e.getMessage(), e);
+//            log.debug(e.getMessage(), e);
 //        }
 //        {
 //            //{"contractAddresses":["0xe785E82358879F061BC3dcAC6f0444462D4b5330","0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d"]}
@@ -807,7 +810,7 @@ public class AlchemyUtils {
 //            String date = split[1];
 //            SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz.", Locale.US);
 //        } catch (IOException e) {
-//            log.info(e.getMessage(), e);
+//            log.debug(e.getMessage(), e);
 //        } catch (Exception e) {
 //            throw new RuntimeException(e);
 //        }

@@ -5,11 +5,21 @@ import com.eth.event.dao.EthEventTransferDao;
 import com.eth.event.dao.EthEventTransferSmartDao;
 import com.eth.event.model.*;
 import com.eth.event.service.IEthEventTransferService;
+import com.eth.framework.base.common.model.PageData;
+import com.eth.framework.base.common.model.PageParam;
+import com.eth.framework.base.common.utils.PageUtils;
+import com.eth.framework.base.common.utils.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.web3j.utils.Numeric;
 
 import javax.annotation.Resource;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -38,6 +48,7 @@ public class EthEventTransferServiceImpl implements IEthEventTransferService {
     @Override
     public void addEventTransferSmart(EthEventTransferSmartModel transfer) throws Exception {
         ethEventTransferSmartDao.save(transfer);
+        accountService.updateAddressTransfer(transfer);
     }
 
     @Override
@@ -74,13 +85,11 @@ public class EthEventTransferServiceImpl implements IEthEventTransferService {
                 toTransferSet.add(toTransfer.getFrom());
             }
         }
-        {
-            //只留下同时买入和卖出的账号
-            filterSameAddress(fromTransferSet, toTransferSet);
-        }
+        //只留下同时买入和卖出的账号
+        Set<String> filterAddressSet = filterSameAddress(fromTransferSet, toTransferSet);
         //判断账号是否是合约账号
-        List<String> accountCode = accountService.getAccountCode(fromTransferSet);
-        Iterator<String> iterator = fromTransferSet.iterator();
+        List<String> accountCode = accountService.getAccountCode(filterAddressSet);
+        Iterator<String> iterator = filterAddressSet.iterator();
         int i=0;
         while(iterator.hasNext()){
             iterator.next();
@@ -90,10 +99,16 @@ public class EthEventTransferServiceImpl implements IEthEventTransferService {
             }
             i++;
         }
-        return fromTransferSet;
+        return filterAddressSet;
     }
 
-    private static void filterSameAddress(Set<String> fromTransferSet, Set<String> toTransferSet) {
+    private static Set<String> filterSameAddress(Set<String> fromTransferSet, Set<String> toTransferSet) {
+        if(fromTransferSet.isEmpty()){
+            return toTransferSet;
+        }
+        if(toTransferSet.isEmpty()){
+            return fromTransferSet;
+        }
         Iterator<String> iterator = fromTransferSet.iterator();
         //只留下同时买入和卖出的账号
         while(iterator.hasNext()){
@@ -102,6 +117,7 @@ public class EthEventTransferServiceImpl implements IEthEventTransferService {
                 iterator.remove();
             }
         }
+        return fromTransferSet;
     }
     @Override
     public EthEventTransferModel getEthEventTransferModel(BigInteger blockNumber, String transactionHash, String type, Date timestamp, String data, BigInteger logIndex, Boolean removed, String address, List<String> topics) {
@@ -232,5 +248,35 @@ public class EthEventTransferServiceImpl implements IEthEventTransferService {
             tokenNumHex = "0x0";
         }
         return tokenNumHex;
+    }
+    /**
+     * 查询监听的聪明钱包交易
+     * @param smartAddress
+     * @param startTime
+     * @param endTime
+     * @param pageInfo
+     * @return
+     */
+    @Override
+    public PageData<EthEventTransferSmartModel> listAccountSmartTransfer(String smartAddress, Date startTime, Date endTime, PageParam pageInfo) throws Exception {
+        Specification<EthEventTransferSmartModel> specification = new Specification<EthEventTransferSmartModel>() {
+            @Override
+            public Predicate toPredicate(Root<EthEventTransferSmartModel> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+                Predicate predicate= cb.conjunction();
+                if(!StringUtils.isEmpty(smartAddress)){
+                    predicate.getExpressions().add(cb.equal(root.get("listenAddress"), smartAddress));
+                }
+                if(startTime != null){
+                    predicate.getExpressions().add(cb.greaterThanOrEqualTo(root.get("timestamp"), startTime));
+                }
+                if(endTime != null){
+                    predicate.getExpressions().add(cb.lessThan(root.get("timestamp"), endTime));
+                }
+                return predicate;
+            }
+        };
+        Page<EthEventTransferSmartModel> page = ethEventTransferSmartDao.findAll(specification, pageInfo);
+        PageData<EthEventTransferSmartModel> pageData = PageUtils.convertPageData(page);
+        return pageData;
     }
 }

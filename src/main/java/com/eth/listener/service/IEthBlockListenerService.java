@@ -23,5 +23,5 @@ public interface IEthBlockListenerService {
     /**
      * 初始化启动监听器
      */
-    void startInitEthListenerAll() throws IOException;
+    void startInitEthListenerAll();
 }

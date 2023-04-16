@@ -46,6 +46,10 @@ public class EthEventTransferSmartModel {
     private Date updatedAt;
     @Column(name="method_type")
     private String methodType;//交易函数类型
+    @Column(name="listen_address")
+    private String listenAddress;//监听地址
+    @Column(name="trans_type")
+    private String transType;//交易类型
 
     public EthEventTransferSmartModel(EthEventTransferModel model) {
         this.id = model.getId();

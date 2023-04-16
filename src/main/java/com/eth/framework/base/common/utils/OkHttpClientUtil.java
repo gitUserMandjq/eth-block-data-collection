@@ -4,7 +4,6 @@ import okhttp3.*;
 
 import java.io.IOException;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -93,7 +92,7 @@ public class OkHttpClientUtil {
         // 构造 Request
         Request.Builder requestBuilder = new Request.Builder();
         Request request = requestBuilder.post(body)
-                .addHeader("Accept", "application/json")
+                .addHeader("accept", "application/json")
                 .addHeader("content-type", "application/json").url(url).build();
         // 将 Request 封装为 Call
         Call call = builder().newCall(request);
@@ -218,16 +217,23 @@ public class OkHttpClientUtil {
      */
     private RequestBody setRequestBody(Map<String, Object> bodyParams) {
         RequestBody body = null;
-        FormBody.Builder formEncodingBuilder = new FormBody.Builder();
-        if (bodyParams != null) {
-            Iterator<String> iterator = bodyParams.keySet().iterator();
-            String key = "";
-            while (iterator.hasNext()) {
-                key = iterator.next().toString();
-                formEncodingBuilder.add(key, String.valueOf(bodyParams.get(key)));
-            }
+//        FormBody.Builder formEncodingBuilder = new FormBody.Builder();
+//        if (bodyParams != null) {
+//            Iterator<String> iterator = bodyParams.keySet().iterator();
+//            String key = "";
+//            while (iterator.hasNext()) {
+//                key = iterator.next().toString();
+//                formEncodingBuilder.add(key, String.valueOf(bodyParams.get(key)));
+//            }
+//        }
+//        body = formEncodingBuilder.build();
+        MediaType mediaType = MediaType.parse("application/json");
+//        RequestBody body = null;
+        try {
+            body = RequestBody.create(mediaType, JsonUtil.object2String(bodyParams));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        body = formEncodingBuilder.build();
         return body;
     }
 

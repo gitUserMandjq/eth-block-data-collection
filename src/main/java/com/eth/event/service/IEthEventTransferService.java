@@ -3,6 +3,8 @@ package com.eth.event.service;
 import com.eth.event.model.EthEventTransferModel;
 import com.eth.event.model.EthEventTransferQO;
 import com.eth.event.model.EthEventTransferSmartModel;
+import com.eth.framework.base.common.model.PageData;
+import com.eth.framework.base.common.model.PageParam;
 
 import java.math.BigInteger;
 import java.util.Date;
@@ -42,4 +44,13 @@ public interface IEthEventTransferService {
     EthEventTransferModel getSingleEthEventTransferModel(BigInteger blockNumber, String transactionHash, String type, Date timestamp, Map l, String address, List<String> topics);
 
     List<EthEventTransferModel> getBatchEthEventTransferModels(BigInteger blockNumber, String transactionHash, String type, Date timestamp, Map l, String address, List<String> topics);
+    /**
+     * 查询监听的聪明钱包交易
+     * @param smartAddress
+     * @param startTime
+     * @param endTime
+     * @param pageInfo
+     * @return
+     */
+    PageData<EthEventTransferSmartModel> listAccountSmartTransfer(String smartAddress, Date startTime, Date endTime, PageParam pageInfo) throws Exception;
 }

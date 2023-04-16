@@ -1,9 +1,11 @@
 package com.eth.etlTask.service.impl;
 
+import com.eth.account.model.EthContractsModel;
+import com.eth.account.service.IAccountService;
 import com.eth.block.model.EthBlockModel;
 import com.eth.block.model.EthBlockUncleModel;
 import com.eth.block.service.IEthBlockService;
-import com.eth.ens.model.EthEnsDTO;
+import com.eth.ens.model.EthNftDTO;
 import com.eth.ens.model.EthEnsInfoModel;
 import com.eth.ens.service.IEthEnsInfoService;
 import com.eth.etlTask.service.IEtlTaskService;
@@ -16,6 +18,7 @@ import com.eth.framework.base.sysMessage.model.SysErrorMessageModel;
 import com.eth.framework.base.sysMessage.model.SysMessageModel;
 import com.eth.framework.base.sysMessage.service.ISysErrorMessageService;
 import com.eth.framework.base.sysMessage.service.ISysMessageService;
+import com.eth.nft.service.IEthNftInfoService;
 import com.eth.transaction.consts.EthEventTopicConst;
 import com.eth.transaction.model.EthTxnModel;
 import com.eth.transaction.model.EthTxnReceiptDTO;
@@ -51,6 +54,10 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
     ISysMessageService sysMessageService;
     @Resource
     IEthEventTransferService ethEventTransferService;
+    @Resource
+    IEthNftInfoService ethNftInfoService;
+    @Resource
+    IAccountService accountService;
 
     ExecutorService threadPool= Executors.newFixedThreadPool(30);
 
@@ -106,6 +113,9 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                 String body = AlchemyUtils.alchemygetTransactionReceipts(blockNumberList);
                 Map<String, Object> resultMap = JsonUtil.string2Obj(body);
                 Map result = (Map) resultMap.get("result");
+                //初步处理交易信息
+                HashMap<String, EthNftDTO> nftMap = new HashMap<>();
+                Set<String> tokenIds = new HashSet<>();
                 List<EthEventTransferModel> transferList = new ArrayList<>();
                 if(result.containsKey("receipts")){
                     List<Map> receipts = (List<Map>) result.get("receipts");
@@ -135,13 +145,36 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                             String topic0 = topics.get(0);//topic0就是函数名
                             if(EthEventTopicConst.TRANSFER_EVENT_TOPIC.equals(topic0)){//tokenId在topic[3]
                                 //处理交易函数
-                                dealTransferEvent(transferList, blockNumber, transactionHash, type, txn, l, address, topics, topic0);
+                                EthEventTransferModel transfer = dealTransferEvent(blockNumber, transactionHash, type, txn, l, address, topics, topic0);
+                                transferList.add(transfer);
+                                //解析nft数据
+                                EthContractsModel contract = accountService.getContractByAddress(contractAddress);
+                                if(contract != null && (EthContractsModel.TYPE_ERC721.equals(contract.getType()) 
+                                        || EthContractsModel.TYPE_ERC1155.equals(contract.getType()))){//如果是erc721或者erc1155合约，代表是nft
+                                    asseNftInfo(transfer, tokenIds, nftMap);
+                                }
                             }else if(EthEventTopicConst.TRANSFER_EVENT_SGINGLE_TOPIC.equals(topic0)){
                                 //处理单个交易（erc1155）
-                                dealTransferSingleEvent(transferList, blockNumber, transactionHash, type, txn, l, address, topics);
+                                EthEventTransferModel transfer = dealTransferSingleEvent(blockNumber, transactionHash, type, txn, l, address, topics);
+                                transferList.add(transfer);
+                                //解析nft数据
+                                EthContractsModel contract = accountService.getContractByAddress(contractAddress);
+                                if(contract != null && (EthContractsModel.TYPE_ERC721.equals(contract.getType())
+                                        || EthContractsModel.TYPE_ERC1155.equals(contract.getType()))){//如果是erc721或者erc1155合约，代表是nft
+                                    asseNftInfo(transfer, tokenIds, nftMap);
+                                }
                             }else if(EthEventTopicConst.TRANSFER_EVENT_BATCH_TOPIC.equals(topic0)){
                                 //处理批量交易（erc1155）
-                                dealTransferBatchEvent(transferList, blockNumber, transactionHash, type, txn, l, address, topics);
+                                List<EthEventTransferModel> transferTemplateList = dealTransferBatchEvent(blockNumber, transactionHash, type, txn, l, address, topics);
+                                transferList.addAll(transferTemplateList);
+                                //解析nft数据
+                                EthContractsModel contract = accountService.getContractByAddress(contractAddress);
+                                if(contract != null && (EthContractsModel.TYPE_ERC721.equals(contract.getType())
+                                        || EthContractsModel.TYPE_ERC1155.equals(contract.getType()))){//如果是erc721或者erc1155合约，代表是nft
+                                    for(EthEventTransferModel transfer:transferTemplateList){
+                                        asseNftInfo(transfer, tokenIds, nftMap);
+                                    }
+                                }
                             }
                         }
                     }
@@ -150,6 +183,17 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                 //批量新增交易信息,交易信息太多，暂时不处理
 //                ethTxnService.batchInsertTransaction(transactionMap);
                 ethEventTransferService.addBatchEventTransfer(transferList);
+                Map<String, Map> metaMap = getMetaMap(tokenIds);
+                Iterator<Map.Entry<String, EthNftDTO>> iterator = nftMap.entrySet().iterator();
+                List<EthNftDTO> valueList = new ArrayList<>();
+                while(iterator.hasNext()){
+                    Map.Entry<String, EthNftDTO> next = iterator.next();
+                    EthNftDTO value = next.getValue();
+                    Map map = metaMap.get(value.getTokenId());
+                    value.setMeta(map);
+                    valueList.add(value);
+                }
+                ethNftInfoService.batchInsertOrUpdateEns(valueList);
                 log.info("batchInsertTransaction-costTime:{}ms",new Date().getTime() - beginTime1.getTime());
             }
             Long costTime = new Date().getTime() - beginTime.getTime();
@@ -171,7 +215,23 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
         } finally {
         }
     }
-
+    private void asseNftInfo(EthEventTransferModel transfer, Set<String> tokenIds, HashMap<String, EthNftDTO> nftMap){
+        String tokenId = transfer.getTokenId();
+        String from = transfer.getFromAddress();
+        String to = transfer.getToAddress();
+        tokenIds.add(tokenId);
+        EthNftDTO ethEnsDTO;
+        if(nftMap.containsKey(tokenId)){
+            ethEnsDTO = nftMap.get(tokenId);
+        }else{
+            ethEnsDTO = new EthNftDTO();
+            ethEnsDTO.setTokenId(tokenId);
+            ethEnsDTO.setAddress(transfer.getTokenAddress());
+            nftMap.put(tokenId, ethEnsDTO);
+        }
+        ethEnsDTO.setFrom(from);
+        ethEnsDTO.setTo(to);
+    }
     /**
      * 筛选区块，如果已经处理过了则去除
      * @param blockNumberList
@@ -186,7 +246,6 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
 
     /**
      * 处理批量交易事件（erc1155）
-     * @param transferList
      * @param blockNumber
      * @param transactionHash
      * @param type
@@ -195,16 +254,15 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
      * @param address
      * @param topics
      */
-    private void dealTransferBatchEvent(List<EthEventTransferModel> transferList, BigInteger blockNumber, String transactionHash, String type, EthTxnModel txn, Map l, String address, List<String> topics) {
+    private List<EthEventTransferModel> dealTransferBatchEvent(BigInteger blockNumber, String transactionHash, String type, EthTxnModel txn, Map l, String address, List<String> topics) {
         List<EthEventTransferModel> templateList = ethEventTransferService.getBatchEthEventTransferModels(blockNumber, transactionHash, type, txn.getTimestamp(), l, address, topics);
-        transferList.addAll(templateList);
+        return templateList;
     }
 
 
 
     /**
      * 处理单个交易事件（erc1155）
-     * @param transferList
      * @param blockNumber
      * @param transactionHash
      * @param type
@@ -213,15 +271,14 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
      * @param address
      * @param topics
      */
-    private void dealTransferSingleEvent(List<EthEventTransferModel> transferList, BigInteger blockNumber, String transactionHash, String type, EthTxnModel txn, Map l, String address, List<String> topics) {
+    private EthEventTransferModel dealTransferSingleEvent(BigInteger blockNumber, String transactionHash, String type, EthTxnModel txn, Map l, String address, List<String> topics) {
         EthEventTransferModel transfer = ethEventTransferService.getSingleEthEventTransferModel(blockNumber, transactionHash, type, txn.getTimestamp(), l, address, topics);
-        transferList.add(transfer);
+        return transfer;
     }
 
 
     /**
      * 处理一般交易事件
-     * @param transferList
      * @param blockNumber
      * @param transactionHash
      * @param type
@@ -231,13 +288,13 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
      * @param topics
      * @param topic0
      */
-    private void dealTransferEvent(List<EthEventTransferModel> transferList, BigInteger blockNumber, String transactionHash, String type, EthTxnModel txn, Map l, String address, List<String> topics, String topic0) {
+    private EthEventTransferModel dealTransferEvent(BigInteger blockNumber, String transactionHash, String type, EthTxnModel txn, Map l, String address, List<String> topics, String topic0) {
         String data = (String) l.get("data");
         String logIndexStr = (String) l.get("logIndex");
         Boolean removed = (Boolean) l.get("removed");
         BigInteger logIndex = Numeric.decodeQuantity(logIndexStr);
         EthEventTransferModel transfer = ethEventTransferService.getEthEventTransferModel(blockNumber, transactionHash, type, txn.getTimestamp(), data, logIndex, removed, address, topics);
-        transferList.add(transfer);
+        return transfer;
     }
 
     /**
@@ -277,6 +334,19 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
     }
     /**
      * 解析某一高度的区块链数据
+     * @throws Exception
+     */
+    @Override
+    public void etlCommonBlock(Integer batchNum, Long maxBlock, boolean filterNumber) throws Exception {
+        Long startBlockNumber = sysMessageService.getMaxBlockNumber(MessageConst.TYPE_COMTASK);
+        Long endBlockNumber = ethBlockService.getCurrentBlockNumber().longValue();
+        if(endBlockNumber - startBlockNumber > maxBlock){
+            endBlockNumber = startBlockNumber + maxBlock;
+        }
+        etlCommonBlock(startBlockNumber, endBlockNumber, batchNum, filterNumber);
+    }
+    /**
+     * 解析某一高度的区块链数据
      * @param startBlockNumber
      * @param endBlockNumber
      * @throws Exception
@@ -295,6 +365,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
     @Override
     public void etlCommonBlock(Long startBlockNumber, Long endBlockNumber, Integer batchNum, boolean filterNumber) throws Exception {
         log.info("startNumber:{},endNumer:{}", startBlockNumber, endBlockNumber);
+        Date beginTime = new Date();
         CountDownLatch latch = new CountDownLatch((int)(endBlockNumber - startBlockNumber + 1));
         Semaphore lock = new Semaphore(20);
         for(long i = startBlockNumber;i<=endBlockNumber;i+=batchNum){
@@ -308,6 +379,9 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
             }
             etlCommonBlock(blockNumberList, 0, filterNumber, latch, lock);
         }
+        //阻塞直到任务完成
+        latch.await();
+        log.info("etlCommonBlock-allCostTime:{}ms", new Date().getTime() - beginTime.getTime());
     }
     /**
      * 解析某一高度的区块链数据
@@ -331,7 +405,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
             //筛选区块，如果已经处理过了，那么就不再处理
             filterBlockNumer(blockNumber, taskType);
             //初步处理交易信息
-            HashMap<String, EthEnsDTO> ensMap = new HashMap<>();
+            HashMap<String, EthNftDTO> ensMap = new HashMap<>();
             //获取交易回执，交易回执返回的顺序其实和交易的顺序一致
             String body = AlchemyUtils.alchemygetTransactionReceipts(blockNumber);
             Map<String, Object> resultMap = JsonUtil.string2Obj(body);
@@ -359,11 +433,11 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                                 log.info("TransactionHash:"+receipt.getTransactionHash());
 //                                    String nftMetadata = AlchemyUtils.getNFTMetadata(address, tokenId);
                                 tokenIds.add(tokenId);
-                                EthEnsDTO ethEnsDTO;
+                                EthNftDTO ethEnsDTO;
                                 if(ensMap.containsKey(tokenId)){
                                     ethEnsDTO = ensMap.get(tokenId);
                                 }else{
-                                    ethEnsDTO = new EthEnsDTO();
+                                    ethEnsDTO = new EthNftDTO();
 //                                        ethEnsDTO.setMeta(nftMetadata);
                                     ethEnsDTO.setTokenId(tokenId);
                                     ethEnsDTO.setAddress(address);
@@ -377,11 +451,11 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                 }
             }
             Map<String, Map> metaMap = getMetaMap(tokenIds);
-            Iterator<Map.Entry<String, EthEnsDTO>> iterator = ensMap.entrySet().iterator();
-            List<EthEnsDTO> valueList = new ArrayList<>();
+            Iterator<Map.Entry<String, EthNftDTO>> iterator = ensMap.entrySet().iterator();
+            List<EthNftDTO> valueList = new ArrayList<>();
             while(iterator.hasNext()){
-                Map.Entry<String, EthEnsDTO> next = iterator.next();
-                EthEnsDTO value = next.getValue();
+                Map.Entry<String, EthNftDTO> next = iterator.next();
+                EthNftDTO value = next.getValue();
                 Map map = metaMap.get(value.getTokenId());
                 value.setMeta(map);
                 valueList.add(value);
