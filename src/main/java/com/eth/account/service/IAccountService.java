@@ -10,6 +10,7 @@ import com.eth.framework.base.common.model.PageParam;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface IAccountService {
@@ -81,6 +82,8 @@ public interface IAccountService {
 
     /**
      * 初始化合约map
+     *
+     * @return
      */
-    void initContractMap();
+    Map<String, EthContractsModel> initContractMap() throws InterruptedException;
 }

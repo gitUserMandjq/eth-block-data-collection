@@ -39,10 +39,11 @@ public class EthContractsModel {
     @Column(name="type")
     private String type;//合约标准
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createdAt;
+    @Column(name="created_at")
+    private Date createdAt = new Date();
     @Column(name="updated_at")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date updatedAt;
+    private Date updatedAt = new Date();
     public static final String TYPE_ERC20 = "erc20";
     public static final String TYPE_ERC721 = "erc721";
     public static final String TYPE_ERC1155 = "erc1155";

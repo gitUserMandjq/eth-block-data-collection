@@ -27,13 +27,17 @@ public class StartInit implements ApplicationListener<ApplicationStartedEvent> {
     @Override
     public void onApplicationEvent(ApplicationStartedEvent event) {
         log.info("startInit.enabled：{}", enabled);
+        //加载合约地址
+        try {
+            accountService.initContractMap();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         if("1".equals(enabled)){
             //开始交易计算任务
             etlTaskProcessService.startEtlTaskProcessService();
             //启动聪明钱包监听器
             ethBlockListenerService.startInitEthListenerAll();
-            //加载合约地址
-            accountService.initContractMap();
         }
     }
 }

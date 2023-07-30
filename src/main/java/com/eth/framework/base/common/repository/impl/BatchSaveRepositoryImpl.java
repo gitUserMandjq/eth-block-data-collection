@@ -71,6 +71,8 @@ public class BatchSaveRepositoryImpl<T,ID extends Serializable> extends SimpleJp
     @Override
     @Transactional
     public <S extends T> Iterable<S> batchIgnoreSave(Iterable<S> var1, int batchInt) throws Exception {
+        //清除托管对象，不然会自动执行update方法
+        em.clear();
         if(var1 != null && var1.iterator().hasNext()){//判断集合是否为空
             S o1 = var1.iterator().next();
             Class<?> clazz = o1.getClass();
@@ -92,6 +94,8 @@ public class BatchSaveRepositoryImpl<T,ID extends Serializable> extends SimpleJp
     @Override
     @Transactional
     public <S extends T> Iterable<S> batchReplace(Iterable<S> var1, int batchInt) throws Exception {
+        //清除托管对象，不然会自动执行update方法
+        em.clear();
         if(var1 != null && var1.iterator().hasNext()){//判断集合是否为空
             S o1 = var1.iterator().next();
             Class<?> clazz = o1.getClass();

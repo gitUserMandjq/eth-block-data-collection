@@ -44,7 +44,7 @@ class SpringbootWeb3ApplicationTests {
 //    Long start = 9380422L;
     //2022-8-1
 
-    Long start = 15490980L;
+    Long start = 15492201L;
 //    Long start = 14669839L;
 //    Long high = start + 5000L;
     Integer batchNumber = 10;
@@ -52,13 +52,13 @@ class SpringbootWeb3ApplicationTests {
 //    ids.add(10000002L);
 //    ids.add(10000003L);
 //    ids.add(10000004L);
-//    etlTaskService.etlCommonBlock(start, high, 20, false);
 //    etlTaskService.etlBl, falseock(ids, 3);
 //    etlTaskService.etlCommonBlock(ids, 3);
 //    timerService.dealErrorEthTask(100);
 //    timerService.dealEtlTask(20);
 //    dealEtlTask(start, high, batchNumber);
-    etlTaskService.etlCommonBlock(20, 10000L, false);
+    etlTaskService.etlCommonBlock(start, start + 1000, 20, false);
+//    etlTaskService.etlCommonBlock(20, 10000L, false);
 //    for(int i=0;i<10;i++){
 //      etlTaskService.dealErrorComtask(100);
 //    }

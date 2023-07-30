@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.GZIPOutputStream;
 
 
@@ -1274,6 +1276,21 @@ public class StringUtils {
         return true;
     }
 
+    /**
+     * 分割集合成多个限制大小的块
+     * @param list
+     * @param limit 分割区块大小
+     * @return
+     * @param <T>
+     */
+    public static <T> List<List<T>> splitListList(Collection<T> list, Integer limit){
+        Integer size = (list.size() + limit - 1) / limit;
+        List<List<T>> splitList = Stream.iterate(0, n -> n + 1).limit(size)
+                .map(a ->
+                        list.stream().skip(a * limit).limit(limit).collect(Collectors.toList())
+                ).collect(Collectors.toList());
+        return splitList;
+    }
     public static void main(String[] args) {
         String str = "\uD83D\uDD74\u200D♂.eth";
         System.out.println(containInvisibles(str));

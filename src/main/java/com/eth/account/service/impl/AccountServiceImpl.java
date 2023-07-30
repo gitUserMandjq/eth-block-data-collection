@@ -12,6 +12,7 @@ import com.eth.framework.base.common.constant.KeyConst;
 import com.eth.framework.base.common.model.PageData;
 import com.eth.framework.base.common.model.PageParam;
 import com.eth.framework.base.common.utils.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class AccountServiceImpl implements IAccountService {
     @Resource
     EthAccountSmartDao ethAccountSmartDao;
@@ -235,8 +237,7 @@ public class AccountServiceImpl implements IAccountService {
                 //nft合约，{"address":"0x67b36ba196804db198ac4c0a8359a1fafa5e5cff","contractMetadata":{"name":"Meta RPG","symbol":"META","totalSupply":"2500","tokenType":"ERC721"}}
                 //非nft合约，{"address":"0xb8c77482e45f1f44de1745f52c74426c631bdd52","contractMetadata":{"name":"","symbol":"","totalSupply":"","tokenType":"UNKNOWN"}}
                 //
-                String contractMetadata = AlchemyUtils.getContractMetadata(contractAddress);
-                contractsModel = initContractInfo(contractMetadata);
+                contractsModel = initContractInfo(contractAddress);
                 ethContractsDao.save(contractsModel);
             }
             contractMap.put(contractAddress, contractsModel);
@@ -245,6 +246,7 @@ public class AccountServiceImpl implements IAccountService {
     }
     private static EthContractsModel initContractInfo(String contractAddress) throws IOException {
         String contractMetadata = AlchemyUtils.getContractMetadata(contractAddress);
+        log.debug(contractMetadata);
         Map map = JsonUtil.string2Obj(contractMetadata);
         Map meta = (Map) map.get("contractMetadata");
         String tokenType = (String) meta.get("tokenType");
@@ -328,16 +330,32 @@ public class AccountServiceImpl implements IAccountService {
     Map<String, EthContractsModel> contractMap = new HashMap<>();
     /**
      * 初始化合约map
+     *
+     * @return
      */
     @Override
-    public void initContractMap() {
+    public Map<String, EthContractsModel> initContractMap() throws InterruptedException {
         List<String> type = new ArrayList<>();
         type.add("erc20");
         type.add("erc721");
         type.add("erc1155");
-        List<EthContractsModel> contractList = ethContractsDao.listContractInType(type);
-        for(EthContractsModel contractsModel:contractList){
-            contractMap.put(contractsModel.getAddress(), contractsModel);
+        Date beginTime = new Date();
+        Integer count = ethContractsDao.countContractInType(type);
+        Integer size = 1000;
+        Integer page = PageUtils.getTotalPage(size, count);
+        ThreadUtils.ChokeLimitThreadPool threadPool = ThreadUtils.getInstance().chokeLimitThreadPool(page, 11);
+        for(int i=1;i<=page;i++){
+            int finalI = i;
+            threadPool.run(() -> {
+                PageParam pageParam = PageUtils.constructPageParam(finalI, size, "address", "asc");
+                List<EthContractsModel> contractList = ethContractsDao.listContractInType(type, pageParam);
+                for(EthContractsModel contractsModel:contractList){
+                    contractMap.put(contractsModel.getAddress(), contractsModel);
+                }
+            });
         }
+        threadPool.choke();
+        log.info("costTime-total:{}ms", new Date().getTime() - beginTime.getTime());
+        return contractMap;
     }
 }

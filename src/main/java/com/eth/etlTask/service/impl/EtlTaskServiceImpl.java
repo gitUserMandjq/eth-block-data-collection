@@ -5,14 +5,15 @@ import com.eth.account.service.IAccountService;
 import com.eth.block.model.EthBlockModel;
 import com.eth.block.model.EthBlockUncleModel;
 import com.eth.block.service.IEthBlockService;
-import com.eth.ens.model.EthNftDTO;
 import com.eth.ens.model.EthEnsInfoModel;
+import com.eth.ens.model.EthNftDTO;
 import com.eth.ens.service.IEthEnsInfoService;
 import com.eth.etlTask.service.IEtlTaskService;
 import com.eth.event.model.EthEventTransferModel;
 import com.eth.event.service.IEthEventTransferService;
 import com.eth.framework.base.common.utils.AlchemyUtils;
 import com.eth.framework.base.common.utils.JsonUtil;
+import com.eth.framework.base.common.utils.StringUtils;
 import com.eth.framework.base.sysMessage.model.MessageConst;
 import com.eth.framework.base.sysMessage.model.SysErrorMessageModel;
 import com.eth.framework.base.sysMessage.model.SysMessageModel;
@@ -38,6 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -87,6 +89,9 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                 //筛选区块，如果已经处理过了，那么就不再处理
                 filterBlockNumer(blockNumberList, taskType);
             }
+            if(blockNumberList.isEmpty()){
+                return;
+            }
 //            //通过web3.eth方法获取区块链和交易数据
             List<EthBlock.Block> blockList = ethBlockService.getEthBlock(blockNumberList);
             List<EthBlockModel> blockModelList = new ArrayList<>();
@@ -115,7 +120,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                 Map result = (Map) resultMap.get("result");
                 //初步处理交易信息
                 HashMap<String, EthNftDTO> nftMap = new HashMap<>();
-                Set<String> tokenIds = new HashSet<>();
+                Map<String, String[]> tokenIds = new HashMap<>();
                 List<EthEventTransferModel> transferList = new ArrayList<>();
                 if(result.containsKey("receipts")){
                     List<Map> receipts = (List<Map>) result.get("receipts");
@@ -136,7 +141,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                         txn.setStatus(Numeric.decodeQuantity(receipt.getStatus()).intValue());
                         List<Map> logs = (List<Map>) m.get("logs");
                         txn.setLogsNum(logs.size());
-                        String contractAddress = receipt.getContractAddress();
+//                        String contractAddress = receipt.getContractAddress();
                         //获取事件日志，通过事件日志获得transfer交易信息
                         for(Map l:logs){
 //                            log.info(JsonUtil.object2String(l));
@@ -148,7 +153,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                                 EthEventTransferModel transfer = dealTransferEvent(blockNumber, transactionHash, type, txn, l, address, topics, topic0);
                                 transferList.add(transfer);
                                 //解析nft数据
-                                EthContractsModel contract = accountService.getContractByAddress(contractAddress);
+                                EthContractsModel contract = accountService.getContractByAddress(address);
                                 if(contract != null && (EthContractsModel.TYPE_ERC721.equals(contract.getType()) 
                                         || EthContractsModel.TYPE_ERC1155.equals(contract.getType()))){//如果是erc721或者erc1155合约，代表是nft
                                     asseNftInfo(transfer, tokenIds, nftMap);
@@ -158,7 +163,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                                 EthEventTransferModel transfer = dealTransferSingleEvent(blockNumber, transactionHash, type, txn, l, address, topics);
                                 transferList.add(transfer);
                                 //解析nft数据
-                                EthContractsModel contract = accountService.getContractByAddress(contractAddress);
+                                EthContractsModel contract = accountService.getContractByAddress(address);
                                 if(contract != null && (EthContractsModel.TYPE_ERC721.equals(contract.getType())
                                         || EthContractsModel.TYPE_ERC1155.equals(contract.getType()))){//如果是erc721或者erc1155合约，代表是nft
                                     asseNftInfo(transfer, tokenIds, nftMap);
@@ -168,7 +173,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                                 List<EthEventTransferModel> transferTemplateList = dealTransferBatchEvent(blockNumber, transactionHash, type, txn, l, address, topics);
                                 transferList.addAll(transferTemplateList);
                                 //解析nft数据
-                                EthContractsModel contract = accountService.getContractByAddress(contractAddress);
+                                EthContractsModel contract = accountService.getContractByAddress(address);
                                 if(contract != null && (EthContractsModel.TYPE_ERC721.equals(contract.getType())
                                         || EthContractsModel.TYPE_ERC1155.equals(contract.getType()))){//如果是erc721或者erc1155合约，代表是nft
                                     for(EthEventTransferModel transfer:transferTemplateList){
@@ -183,7 +188,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                 //批量新增交易信息,交易信息太多，暂时不处理
 //                ethTxnService.batchInsertTransaction(transactionMap);
                 ethEventTransferService.addBatchEventTransfer(transferList);
-                Map<String, Map> metaMap = getMetaMap(tokenIds);
+                Map<String, Map> metaMap = getMetaMap(tokenIds.values());
                 Iterator<Map.Entry<String, EthNftDTO>> iterator = nftMap.entrySet().iterator();
                 List<EthNftDTO> valueList = new ArrayList<>();
                 while(iterator.hasNext()){
@@ -193,7 +198,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                     value.setMeta(map);
                     valueList.add(value);
                 }
-                ethNftInfoService.batchInsertOrUpdateEns(valueList);
+                ethNftInfoService.batchInsertOrUpdateNft(valueList);
                 log.info("batchInsertTransaction-costTime:{}ms",new Date().getTime() - beginTime1.getTime());
             }
             Long costTime = new Date().getTime() - beginTime.getTime();
@@ -215,11 +220,11 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
         } finally {
         }
     }
-    private void asseNftInfo(EthEventTransferModel transfer, Set<String> tokenIds, HashMap<String, EthNftDTO> nftMap){
+    private void asseNftInfo(EthEventTransferModel transfer, Map<String, String[]> tokenIds, HashMap<String, EthNftDTO> nftMap){
         String tokenId = transfer.getTokenId();
         String from = transfer.getFromAddress();
         String to = transfer.getToAddress();
-        tokenIds.add(tokenId);
+        tokenIds.put(tokenId, new String[]{transfer.getTokenAddress(), tokenId});
         EthNftDTO ethEnsDTO;
         if(nftMap.containsKey(tokenId)){
             ethEnsDTO = nftMap.get(tokenId);
@@ -410,7 +415,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
             String body = AlchemyUtils.alchemygetTransactionReceipts(blockNumber);
             Map<String, Object> resultMap = JsonUtil.string2Obj(body);
             Map result = (Map) resultMap.get("result");
-            Set<String> tokenIds = new HashSet<>();
+            Map<String, String[]> tokenIds = new HashMap<>();
             if(result.containsKey("receipts")){
                 List<Map> receipts = (List<Map>) result.get("receipts");
                 //                JSON.parseArray(JSON.toJSONString(receipts), EthTxnReceiptDTO.class);
@@ -432,7 +437,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                                 log.info("tokenId:"+tokenId);
                                 log.info("TransactionHash:"+receipt.getTransactionHash());
 //                                    String nftMetadata = AlchemyUtils.getNFTMetadata(address, tokenId);
-                                tokenIds.add(tokenId);
+                                tokenIds.put(tokenId, new String[]{address, tokenId});
                                 EthNftDTO ethEnsDTO;
                                 if(ensMap.containsKey(tokenId)){
                                     ethEnsDTO = ensMap.get(tokenId);
@@ -450,7 +455,7 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
                     }
                 }
             }
-            Map<String, Map> metaMap = getMetaMap(tokenIds);
+            Map<String, Map> metaMap = getMetaMap(tokenIds.values());
             Iterator<Map.Entry<String, EthNftDTO>> iterator = ensMap.entrySet().iterator();
             List<EthNftDTO> valueList = new ArrayList<>();
             while(iterator.hasNext()){
@@ -481,12 +486,21 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
         }
     }
 
-    private static Map<String, Map> getMetaMap(Set<String> tokenIds) throws IOException {
+    private static Map<String, Map> getMetaMap(Collection<String[]> tokenIds) throws IOException {
         if(tokenIds.isEmpty()){
             return new HashMap<>();
         }
-        String metaListStr = AlchemyUtils.getNFTMetadataBatch(AlchemyUtils.ENSCONSTRACTADDRESS, tokenIds, EthEnsInfoModel.tokenType);
-        List<Map> metaList = JsonUtil.string2Obj(metaListStr);
+        //tokenIds最多一百个
+        List<Map> metaList = new ArrayList<>();
+        Integer limit = 100;
+        List<List<String[]>> splitList = StringUtils.splitListList(tokenIds, 100);
+//        List<List<String>> splitList = Stream.iterate(0, n -> n + 1).limit(limit).parallel().map(a -> tokenIds.stream().skip(a * limit).limit(limit).parallel().collect(Collectors.toList())).collect(Collectors.toList());
+        for(List<String[]> split:splitList){
+            String metaListStr = AlchemyUtils.getNFTMetadataBatch(split, EthEnsInfoModel.tokenType);
+            List<Map> tempList = JsonUtil.string2Obj(metaListStr);
+            metaList.addAll(tempList);
+        }
+
         Map<String, Map> metaMap = metaList.stream().collect(Collectors.toMap(map -> {
             Map idMap = (Map) map.get("id");
             String tokenId = (String) idMap.get("tokenId");
@@ -621,14 +635,33 @@ public class EtlTaskServiceImpl implements IEtlTaskService {
 //        List<Long> ids = new ArrayList<>();
 //        ids.add(1L);
 //        System.out.println(ids.toString());
-        String data = "0x000000000000000000000000000000000000000000000020861f2a1fc4cac000";
-//        String data = "0x00000425b4462e19460bedb4bccfcf16d270975ef882f03831bf3d40f7342355";
-//        String data = "0x52769477a7d940000";
-//        String data = "0x52769477a7d940000";
-        data = data.replaceAll("0x[0]*", "0x");
-        System.out.println(data);
-        BigInteger value = Numeric.decodeQuantity(data);
-        System.out.println(value);
-        System.out.println(value.longValue());
+//        String data = "0x000000000000000000000000000000000000000000000020861f2a1fc4cac000";
+////        String data = "0x00000425b4462e19460bedb4bccfcf16d270975ef882f03831bf3d40f7342355";
+////        String data = "0x52769477a7d940000";
+////        String data = "0x52769477a7d940000";
+//        data = data.replaceAll("0x[0]*", "0x");
+//        System.out.println(data);
+//        BigInteger value = Numeric.decodeQuantity(data);
+//        System.out.println(value);
+//        System.out.println(value.longValue());
+        List<String> tokenIds = new ArrayList<>();
+        for(int i=0;i<10;i++){
+            tokenIds.add(""+i);
+        }
+        System.out.println(tokenIds);
+        Integer limit = 3;
+        Integer size = (tokenIds.size() + limit - 1) / limit;
+        List<List<String>> splitList = Stream.iterate(0, n -> n + 1).limit(size)
+                .map(a ->
+                        tokenIds.stream().skip(a * limit).limit(limit).collect(Collectors.toList())
+                ).collect(Collectors.toList());
+        System.out.println(splitList.toString());
+
+        List<List<String>> mglist = new ArrayList<>();
+        Stream.iterate(0, n -> n + 1).limit(size).forEach(i -> {
+            mglist.add(tokenIds.stream().skip(i * limit).limit(limit).collect(Collectors.toList()));
+        });
+        System.out.println(mglist.toString());
     }
+
 }
